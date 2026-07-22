@@ -3,3 +3,5 @@
 node_modules
 backups/
 .firebase
+firebase-debug.log
+firestore-debug.log
