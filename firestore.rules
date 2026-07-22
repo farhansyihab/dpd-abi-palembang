@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fungsi helper: Cek apakah email user yang login ada di collection authorized_emails
+    function isAuthorized() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/authorized_emails/$(request.auth.token.email));
+    }
+
+    // 1. Collection Whitelist: Hanya user authorized yang bisa baca (untuk validasi di app)
+    // Write diblokir di level rules (hanya admin via Firebase Console yang boleh ubah)
+    match /authorized_emails/{email} {
+      allow read: if isAuthorized();
+      allow write: if false;
+    }
+
+    // 2. Collection Families
+    match /families/{document=**} {
+      allow read, write: if isAuthorized();
+    }
+
+    // 3. Collection Persons
+    match /persons/{document=**} {
+      allow read, write: if isAuthorized();
+    }
+
+    // 4. Collection Person Relations
+    match /person_relations/{document=**} {
+      allow read, write: if isAuthorized();
+    }
+
+    // 5. Collection Economic Assessments
+    match /economic_assessments/{document=**} {
+      allow read, write: if isAuthorized();
+    }
+
+    // 6. Collection Programs
+    match /programs/{document=**} {
+      allow read, write: if isAuthorized();
+    }
+
+    // 7. Collection Program Participants
+    match /program_participants/{document=**} {
+      allow read, write: if isAuthorized();
+    }
+
+    // 8. Collection Status History
+    match /status_history/{document=**} {
+      allow read, write: if isAuthorized();
+    }
+
+    // 9. Collection Users (Data 4 tim inti)
+    match /users/{document=**} {
+      allow read, write: if isAuthorized();
+    }
+  }
+}
