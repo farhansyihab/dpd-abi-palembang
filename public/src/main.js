@@ -142,27 +142,62 @@ if (document.readyState === 'loading') {
   init();
 }
 
+
+/** 
+ * Bagian ini sudah selesai diuji coba dan berfungsi dengan baik.
+
+  */
+
 // ===== DEBUG MODE: Expose ke window untuk uji console =====
 // HAPUS bagian ini sebelum deploy production!
-
 console.log('🔄 Memuat Repository untuk debug...');
 
 import('./repositories/FamilyRepository.js')
   .then(mod => {
     window.FamilyRepository = mod.FamilyRepository;
     window.familyRepo = new mod.FamilyRepository();
-    console.log('✅ FamilyRepository berhasil dimuat. Ketik: window.familyRepo');
+    console.log('✅ FamilyRepository berhasil dimuat.');
   })
-  .catch(err => {
-    console.error('❌ GAGAL memuat FamilyRepository! Cek apakah file sudah dibuat di folder yang benar.', err);
-  });
+  .catch(err => console.error('❌ GAGAL memuat FamilyRepository', err));
 
 import('./repositories/PersonRepository.js')
   .then(mod => {
     window.PersonRepository = mod.PersonRepository;
     window.personRepo = new mod.PersonRepository();
-    console.log('✅ PersonRepository berhasil dimuat. Ketik: window.personRepo');
+    console.log('✅ PersonRepository berhasil dimuat.');
   })
-  .catch(err => {
-    console.error('❌ GAGAL memuat PersonRepository! Cek apakah file sudah dibuat di folder yang benar.', err);
-  });
+  .catch(err => console.error('❌ GAGAL memuat PersonRepository', err));
+
+// === TAMBAHKAN 4 INI ===
+import('./repositories/PersonRelationRepository.js')
+  .then(mod => {
+    window.PersonRelationRepository = mod.PersonRelationRepository;
+    window.personRelationRepo = new mod.PersonRelationRepository();
+    console.log('✅ PersonRelationRepository berhasil dimuat.');
+  })
+  .catch(err => console.error('❌ GAGAL memuat PersonRelationRepository', err));
+
+import('./repositories/EconomicAssessmentRepository.js')
+  .then(mod => {
+    window.EconomicAssessmentRepository = mod.EconomicAssessmentRepository;
+    window.economicAssessmentRepo = new mod.EconomicAssessmentRepository();
+    console.log('✅ EconomicAssessmentRepository berhasil dimuat.');
+  })
+  .catch(err => console.error('❌ GAGAL memuat EconomicAssessmentRepository', err));
+
+// === 2 BARU UNTUK HARI 3 ===
+import('./repositories/ProgramRepository.js')
+  .then(mod => { window.programRepo = new mod.ProgramRepository(); console.log('✅ ProgramRepository dimuat'); })
+  .catch(err => console.error('❌ GAGAL ProgramRepository', err));
+
+import('./repositories/ProgramParticipantRepository.js')
+  .then(mod => { window.programParticipantRepo = new mod.ProgramParticipantRepository(); console.log('✅ ProgramParticipantRepository dimuat'); })
+  .catch(err => console.error('❌ GAGAL ProgramParticipantRepository', err));
+
+import('./repositories/StatusHistoryRepository.js')
+  .then(mod => { window.statusHistoryRepo = new mod.StatusHistoryRepository(); console.log('✅ StatusHistoryRepository dimuat'); })
+  .catch(err => console.error('❌ Gagal StatusHistoryRepository', err));
+
+import('./repositories/UserRepository.js')
+  .then(mod => { window.userRepo = new mod.UserRepository(); console.log('✅ UserRepository dimuat'); })
+  .catch(err => console.error('❌ Gagal UserRepository', err));  

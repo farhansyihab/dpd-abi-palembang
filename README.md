@@ -138,6 +138,12 @@ Browser akan terbuka untuk otorisasi. Klik "Allow".
 firebase emulators:start
 ```
 
+atau lebih baik lagi
+
+```bash
+firebase emulators:start --only firestore,hosting
+```
+
 Emulator akan menjalankan:
 - **Firestore Emulator** di `http://127.0.0.1:8080`
 - **Hosting Emulator** di `http://127.0.0.1:5000`
