@@ -4,18 +4,14 @@
  * TUGAS:
  * - Baca data dari DOM (form fields)
  * - Validasi real-time (pakai Validator)
- * - Panggil FamilyService untuk simpan data
+ * - Panggil FamilyService untuk simpan data + Economic Assessment
  * - Tampilkan feedback ke user (alert sukses/error)
- * 
- * ATURAN EMAS:
- * - Controller BOLEH akses DOM
- * - Controller TIDAK BOLEH akses Repository/Firestore langsung
- * - Semua logika bisnis ada di Service
  */
 import { BaseController } from './BaseController.js';
 import { FamilyService } from '../services/FamilyService.js';
 import { PersonService } from '../services/PersonService.js';
 import { Validator } from '../services/Validator.js';
+import { EconomicAssessmentModel } from '../models/EconomicAssessmentModel.js';
 import { Logger } from '../core/Logger.js';
 
 const MODULE_NAME = 'FamilyFormController';
@@ -30,84 +26,54 @@ class FamilyFormController extends BaseController {
     }
 
     /**
-     * Inisialisasi controller — pasang event listener, setup validasi real-time.
-     */
-    /**
      * Inisialisasi controller — cek auth dulu, baru setup form.
      */
     async init() {
         super.init();
         Logger.info(MODULE_NAME, 'Inisialisasi form keluarga');
 
-        // 🔐 1. AUTH GUARD: Pastikan user sudah login & authorized
+        // 🔐 1. AUTH GUARD
         const isAuthorized = await this.requireAuth();
-        if (!isAuthorized) {
-            // requireAuth() sudah handle redirect, cukup return untuk hentikan init
-            return;
-        }
+        if (!isAuthorized) return;
 
-        // 🔐 2. Cek mode edit (ada parameter ?id=xxx di URL)
-        // DEKLARASI urlParams HANYA SATU KALI DI SINI
+        // 🔐 2. Cek mode edit
         const urlParams = new URLSearchParams(window.location.search);
         const familyId = urlParams.get('id');
-
         if (familyId) {
             this.isEditMode = true;
             this.currentFamilyId = familyId;
             this.loadFamilyData(familyId);
         }
 
-        // 🔐 3. Setup form (hanya dijalankan jika user sudah authorized)
+        // 🔐 3. Setup form
         this.setupEventListeners();
         this.setupRealtimeValidation();
         this.setupAutoFormat();
+        this.setupRealtimeCalculation(); // BARU: Kalkulasi real-time ekonomi
     }
 
-    /**
-     * Pasang event listener untuk form dan tombol.
-     */
     setupEventListeners() {
-        // Submit form
         this.rootElement.addEventListener('submit', (e) => this.handleSubmit(e));
-
-        // Tombol Batal
         document.getElementById('btnBatal').addEventListener('click', () => {
             if (confirm('Yakin ingin membatalkan? Data yang sudah diisi akan hilang.')) {
                 window.location.href = '/';
             }
         });
-
-        // Tombol Simpan Draft (untuk nanti — saat ini belum implementasi)
         document.getElementById('btnSimpanDraft').addEventListener('click', () => {
             this.showAlert('Fitur Simpan Draft akan segera tersedia', 'info');
         });
     }
 
-    /**
-     * Setup validasi real-time untuk field-field kritis.
-     * Dipanggil saat user selesai mengetik (event 'blur') atau saat mengetik (event 'input').
-     */
     setupRealtimeValidation() {
-        // No. KK — validasi saat user selesai mengetik (blur)
         const noKKField = document.getElementById('no_kk');
         noKKField.addEventListener('blur', () => this.validateNoKK());
         noKKField.addEventListener('input', () => this.clearFieldError('no_kk'));
 
-        // NIK Kepala Keluarga — validasi saat blur
         const nikField = document.getElementById('nik_kepala_keluarga');
         nikField.addEventListener('blur', () => this.validateNIK());
         nikField.addEventListener('input', () => this.clearFieldError('nik_kepala_keluarga'));
 
-        // Field wajib lainnya — validasi saat blur
-        const requiredFields = [
-            'nama_kepala_keluarga',
-            'alamat_jalan',
-            'alamat_rt',
-            'alamat_rw',
-            'alamat_kelurahan',
-            'alamat_kecamatan'
-        ];
-
+        const requiredFields = ['nama_kepala_keluarga', 'alamat_jalan', 'alamat_rt', 'alamat_rw', 'alamat_kelurahan', 'alamat_kecamatan', 'eco_periode', 'eco_sumber_pendapatan', 'eco_total_pendapatan'];
         requiredFields.forEach(fieldId => {
             const field = document.getElementById(fieldId);
             if (field) {
@@ -117,12 +83,8 @@ class FamilyFormController extends BaseController {
         });
     }
 
-    /**
-     * Setup auto-format untuk field angka (NIK, No. KK, penghasilan).
-     * Hanya izinkan input angka, hapus karakter non-digit otomatis.
-     */
     setupAutoFormat() {
-        // No. KK & NIK — hanya angka
+        // No. KK & NIK
         ['no_kk', 'nik_kepala_keluarga'].forEach(fieldId => {
             const field = document.getElementById(fieldId);
             field.addEventListener('input', (e) => {
@@ -130,54 +92,100 @@ class FamilyFormController extends BaseController {
             });
         });
 
-        // Penghasilan — format rupiah (titik ribuan)
+        // Penghasilan KK
         const penghasilanField = document.getElementById('penghasilan_kk');
-        penghasilanField.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value === '') {
-                e.target.value = '';
-                return;
-            }
-            // Format dengan titik ribuan
-            e.target.value = new Intl.NumberFormat('id-ID').format(value);
-        });
+        penghasilanField.addEventListener('input', (e) => this._formatRupiahInput(e));
+        penghasilanField.addEventListener('blur', (e) => this._formatRupiahBlur(e));
 
-        // Saat field kehilangan fokus, pastikan format benar
-        penghasilanField.addEventListener('blur', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value === '') {
-                e.target.value = '';
-            } else {
-                e.target.value = new Intl.NumberFormat('id-ID').format(value);
-            }
+        // BARU: Semua field ekonomi yang berformat Rupiah
+        const ecoRupiahFields = document.querySelectorAll('.format-rupiah');
+        ecoRupiahFields.forEach(field => {
+            field.addEventListener('input', (e) => this._formatRupiahInput(e));
+            field.addEventListener('blur', (e) => this._formatRupiahBlur(e));
         });
     }
 
-    /**
-     * Validasi No. KK — cek format (16 digit) dan duplikasi.
-     */
+    // BARU: Setup kalkulasi real-time menggunakan EconomicAssessmentModel
+    setupRealtimeCalculation() {
+        const ecoInputs = document.querySelectorAll('.format-rupiah, #eco_total_pendapatan');
+        ecoInputs.forEach(input => {
+            input.addEventListener('input', () => this.updateEconomicSummary());
+        });
+    }
+
+    // Helper: Format input Rupiah saat mengetik
+    _formatRupiahInput(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        e.target.value = value ? new Intl.NumberFormat('id-ID').format(value) : '';
+    }
+
+    // Helper: Format blur Rupiah (memastikan tidak ada titik di akhir jika kosong)
+    _formatRupiahBlur(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        e.target.value = value ? new Intl.NumberFormat('id-ID').format(value) : '';
+    }
+
+    // BARU: Update ringkasan pengeluaran & selisih secara real-time
+    updateEconomicSummary() {
+        try {
+            const parseRupiah = (id) => {
+                const val = this.getFieldValue(id).replace(/\./g, '');
+                return val ? parseInt(val, 10) : 0;
+            };
+
+            const pengeluaran = {
+                makan: parseRupiah('eco_pengeluaran_makan'),
+                listrik_air: parseRupiah('eco_pengeluaran_listrik_air'),
+                pendidikan: parseRupiah('eco_pengeluaran_pendidikan'),
+                kesehatan: parseRupiah('eco_pengeluaran_kesehatan'),
+                lainnya: parseRupiah('eco_pengeluaran_lainnya')
+            };
+
+            const totalPendapatan = parseRupiah('eco_total_pendapatan');
+
+            // Gunakan Model untuk kalkulasi (Reuse logic yang sudah ada)
+            const tempModel = new EconomicAssessmentModel({
+                total_pendapatan: totalPendapatan,
+                pengeluaran: pengeluaran
+            });
+
+            const totalPengeluaran = tempModel.calculateTotalPengeluaran();
+            const selisih = tempModel.calculateSelisih();
+
+            // Update UI
+            document.getElementById('summary_total_pengeluaran').textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(totalPengeluaran);
+
+            const selisihEl = document.getElementById('summary_selisih');
+            selisihEl.textContent = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(selisih);
+
+            // Ubah warna berdasarkan surplus/defisit
+            if (selisih >= 0) {
+                selisihEl.className = 'fs-5 fw-bold text-success';
+                selisihEl.textContent += ' (Surplus)';
+            } else {
+                selisihEl.className = 'fs-5 fw-bold text-danger';
+                selisihEl.textContent += ' (Defisit)';
+            }
+
+        } catch (error) {
+            Logger.warn(MODULE_NAME, 'Gagal kalkulasi real-time', error);
+        }
+    }
+
     async validateNoKK() {
         const field = document.getElementById('no_kk');
         const value = field.value.trim();
-
-        // Kosongkan error sebelumnya
         this.clearFieldError('no_kk');
-
-        // Cek required
         if (value === '') {
             this.showFieldError('no_kk', 'Nomor KK wajib diisi');
             return false;
         }
-
-        // Cek format
         try {
             Validator.isValidNoKK(value);
         } catch (error) {
             this.showFieldError('no_kk', error.message);
             return false;
         }
-
-        // Cek duplikasi (hanya di mode create)
         if (!this.isEditMode) {
             try {
                 const existingFamily = await this.familyService.familyRepo.findByNoKK(value);
@@ -187,37 +195,26 @@ class FamilyFormController extends BaseController {
                 }
             } catch (error) {
                 Logger.warn(MODULE_NAME, 'Gagal cek duplikasi No. KK', error);
-                // Jangan blokir user kalau cek duplikasi gagal — lanjutkan
             }
         }
-
-        // Valid — tampilkan indikator sukses
         field.classList.add('is-valid');
         return true;
     }
 
-    /**
-     * Validasi NIK Kepala Keluarga — cek format (16 digit) dan duplikasi.
-     */
     async validateNIK() {
         const field = document.getElementById('nik_kepala_keluarga');
         const value = field.value.trim();
-
         this.clearFieldError('nik_kepala_keluarga');
-
         if (value === '') {
             this.showFieldError('nik_kepala_keluarga', 'NIK Kepala Keluarga wajib diisi');
             return false;
         }
-
         try {
             Validator.isValidNIK(value);
         } catch (error) {
             this.showFieldError('nik_kepala_keluarga', error.message);
             return false;
         }
-
-        // Cek duplikasi (hanya di mode create)
         if (!this.isEditMode) {
             try {
                 const existingPerson = await this.personService.personRepo.findByNIK(value);
@@ -229,155 +226,77 @@ class FamilyFormController extends BaseController {
                 Logger.warn(MODULE_NAME, 'Gagal cek duplikasi NIK', error);
             }
         }
-
         field.classList.add('is-valid');
         return true;
     }
 
-    /**
-     * Validasi field required.
-     * 
-     * @param {string} fieldId - ID field
-     * @returns {boolean} true jika valid
-     */
     validateRequired(fieldId) {
         const field = document.getElementById(fieldId);
         const value = field.value.trim();
-
         this.clearFieldError(fieldId);
-
         if (value === '') {
             const fieldName = field.previousElementSibling?.textContent?.replace(' *', '') || fieldId;
             this.showFieldError(fieldId, `${fieldName} wajib diisi`);
             return false;
         }
-
         field.classList.add('is-valid');
         return true;
     }
 
-    /**
-     * Handle submit form — validasi semua field, lalu simpan ke database.
-     * 
-     * @param {Event} event - Event submit
-     */
-    async handleSubmit(event) {
-        event.preventDefault();
-        Logger.info(MODULE_NAME, 'Submit form dimulai');
-
-        // Bersihkan semua error sebelumnya
-        this.clearAllFieldErrors();
-
-        // Validasi semua field
-        const isValid = await this.validateAllFields();
-        if (!isValid) {
-            this.showAlert('Mohon periksa kembali field yang ditandai merah', 'warning');
-            // Scroll ke field error pertama
-            const firstError = this.rootElement.querySelector('.is-invalid');
-            if (firstError) {
-                this.scrollToField(firstError.id);
-            }
-            return;
-        }
-
-        // Ambil data dari form
-        const formData = this.collectFormData();
-
-        // Tampilkan loading
-        this.showLoading(true);
-
-        try {
-            if (this.isEditMode) {
-                // Mode edit — update data
-                await this.familyService.updateFamily(
-                    this.currentFamilyId,
-                    formData.familyData,
-                    formData.namaKepalaKeluarga
-                );
-                this.showAlert('Data keluarga berhasil diperbarui', 'success');
-            } else {
-                // Mode create — buat data baru
-                const result = await this.familyService.createFamily(
-                    formData.familyData,
-                    null, // economicData akan ditambahkan di Hari 2
-                    formData.namaKepalaKeluarga
-                );
-
-                // Buat person kepala keluarga
-                const personId = await this.personService.createPerson({
-                    family_id: result.familyId,
-                    nik: formData.kepalaKeluargaData.nik,
-                    nama: formData.namaKepalaKeluarga,
-                    tempat_lahir: formData.kepalaKeluargaData.tempat_lahir,
-                    tanggal_lahir: formData.kepalaKeluargaData.tanggal_lahir,
-                    jenis_kelamin: formData.kepalaKeluargaData.jenis_kelamin,
-                    hubungan_dlm_keluarga: 'kepala_keluarga',
-                    pendidikan_terakhir: formData.kepalaKeluargaData.pendidikan,
-                    pekerjaan: formData.kepalaKeluargaData.pekerjaan,
-                    penghasilan_bulan: formData.kepalaKeluargaData.penghasilan,
-                    status_abi: formData.kepalaKeluargaData.status_abi
-                });
-
-                // Update family dengan kepala_keluarga_person_id
-                await this.familyService.updateFamily(result.familyId, {
-                    kepala_keluarga_person_id: personId
-                });
-
-                this.showAlert('Data keluarga berhasil disimpan!', 'success', 0); // tidak auto-dismiss
-
-                // Redirect ke halaman detail keluarga (untuk nanti)
-                setTimeout(() => {
-                    window.location.href = `/?familyId=${result.familyId}`;
-                }, 2000);
-            }
-
-            Logger.info(MODULE_NAME, 'Submit form berhasil');
-        } catch (error) {
-            this.showError(error, 'Gagal menyimpan data keluarga');
-            Logger.error(MODULE_NAME, 'Submit form gagal', error);
-        } finally {
-            this.showLoading(false);
-        }
-    }
-
-    /**
-     * Validasi semua field sebelum submit.
-     * 
-     * @returns {Promise<boolean>} true jika semua valid
-     */
     async validateAllFields() {
         let isValid = true;
-
-        // Validasi No. KK
         if (!await this.validateNoKK()) isValid = false;
-
-        // Validasi NIK Kepala Keluarga
         if (!await this.validateNIK()) isValid = false;
 
-        // Validasi field required lainnya
-        const requiredFields = [
-            'nama_kepala_keluarga',
-            'alamat_jalan',
-            'alamat_rt',
-            'alamat_rw',
-            'alamat_kelurahan',
-            'alamat_kecamatan'
-        ];
-
+        const requiredFields = ['nama_kepala_keluarga', 'alamat_jalan', 'alamat_rt', 'alamat_rw', 'alamat_kelurahan', 'alamat_kecamatan', 'eco_periode', 'eco_sumber_pendapatan', 'eco_total_pendapatan'];
         for (const fieldId of requiredFields) {
             if (!this.validateRequired(fieldId)) isValid = false;
         }
-
         return isValid;
     }
 
-    /**
-     * Kumpulkan semua data dari form ke dalam object terstruktur.
-     * 
-     * @returns {Object} Data terstruktur untuk FamilyService
-     */
+    // BARU: Kumpulkan data ekonomi dari form
+    collectEconomicData() {
+        const parseRupiah = (id) => {
+            const val = this.getFieldValue(id).replace(/\./g, '');
+            return val ? parseInt(val, 10) : 0;
+        };
+
+        const pengeluaran = {
+            makan: parseRupiah('eco_pengeluaran_makan'),
+            listrik_air: parseRupiah('eco_pengeluaran_listrik_air'),
+            pendidikan: parseRupiah('eco_pengeluaran_pendidikan'),
+            kesehatan: parseRupiah('eco_pengeluaran_kesehatan'),
+            lainnya: parseRupiah('eco_pengeluaran_lainnya')
+        };
+
+        const aset = {
+            motor: document.getElementById('aset_motor').checked,
+            mobil: document.getElementById('aset_mobil').checked,
+            kulkas: document.getElementById('aset_kulkas').checked,
+            tv: document.getElementById('aset_tv').checked,
+            tanah: document.getElementById('aset_tanah').checked
+        };
+
+        const penerimaBantuan = [];
+        ['bantuan_pkh', 'bantuan_bpnt', 'bantuan_pbi', 'bantuan_kip', 'bantuan_lainnya'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && el.checked) {
+                penerimaBantuan.push(el.value);
+            }
+        });
+
+        return {
+            periode: this.getFieldValue('eco_periode'),
+            total_pendapatan: parseRupiah('eco_total_pendapatan'),
+            sumber_pendapatan_utama: this.getFieldValue('eco_sumber_pendapatan'),
+            pengeluaran: pengeluaran,
+            aset: aset,
+            penerima_bantuan_pemerintah: penerimaBantuan
+        };
+    }
+
     collectFormData() {
-        // Data Kepala Keluarga (untuk PersonModel)
         const namaKepalaKeluarga = this.getFieldValue('nama_kepala_keluarga');
         const penghasilanRaw = this.getFieldValue('penghasilan_kk').replace(/\./g, '');
         const penghasilan = penghasilanRaw ? parseInt(penghasilanRaw, 10) : 0;
@@ -393,7 +312,6 @@ class FamilyFormController extends BaseController {
             status_abi: this.getFieldValue('status_abi_kk')
         };
 
-        // Data Keluarga (untuk FamilyModel)
         const familyData = {
             no_kk: this.getFieldValue('no_kk'),
             alamat: {
@@ -407,29 +325,95 @@ class FamilyFormController extends BaseController {
             status_kepemilikan_rumah: this.getFieldValue('status_kepemilikan_rumah'),
             kondisi_rumah: this.getFieldValue('kondisi_rumah'),
             akses_air_bersih: this.getFieldValue('akses_air_bersih'),
-            status_bantuan: 'belum_ditentukan' // default untuk keluarga baru
+            status_bantuan: 'belum_ditentukan'
         };
+
+        // BARU: Sertakan data ekonomi
+        const economicData = this.collectEconomicData();
 
         return {
             namaKepalaKeluarga,
             kepalaKeluargaData,
-            familyData
+            familyData,
+            economicData
         };
     }
 
-    /**
-     * Load data keluarga dari database (untuk mode edit).
-     * 
-     * @param {string} familyId - ID keluarga
-     */
-    async loadFamilyData(familyId) {
-        Logger.info(MODULE_NAME, `Load data keluarga ${familyId} untuk mode edit`);
+    async handleSubmit(event) {
+        event.preventDefault();
+        Logger.info(MODULE_NAME, 'Submit form dimulai');
+        this.clearAllFieldErrors();
+
+        const isValid = await this.validateAllFields();
+        if (!isValid) {
+            this.showAlert('Mohon periksa kembali field yang ditandai merah', 'warning');
+            const firstError = this.rootElement.querySelector('.is-invalid');
+            if (firstError) this.scrollToField(firstError.id);
+            return;
+        }
+
+        const formData = this.collectFormData();
         this.showLoading(true);
 
         try {
+            if (this.isEditMode) {
+                await this.familyService.updateFamily(this.currentFamilyId, formData.familyData, formData.namaKepalaKeluarga);
+                this.showAlert('Data keluarga berhasil diperbarui', 'success');
+            } else {
+                // Step 1: Buat keluarga
+                const { familyId } = await this.familyService.createFamily(
+                    formData.familyData,
+                    null, // economicData diproses di Step 4 agar familyId sudah ada
+                    formData.namaKepalaKeluarga
+                );
+
+                // Step 2: Buat person kepala keluarga
+                const personId = await this.personService.createPerson({
+                    family_id: familyId,
+                    nik: formData.kepalaKeluargaData.nik,
+                    nama: formData.namaKepalaKeluarga,
+                    tempat_lahir: formData.kepalaKeluargaData.tempat_lahir,
+                    tanggal_lahir: formData.kepalaKeluargaData.tanggal_lahir,
+                    jenis_kelamin: formData.kepalaKeluargaData.jenis_kelamin,
+                    hubungan_dlm_keluarga: 'kepala_keluarga',
+                    pendidikan_terakhir: formData.kepalaKeluargaData.pendidikan,
+                    pekerjaan: formData.kepalaKeluargaData.pekerjaan,
+                    penghasilan_bulan: formData.kepalaKeluargaData.penghasilan,
+                    status_abi: formData.kepalaKeluargaData.status_abi
+                });
+
+                // Step 3: Update family dengan kepala_keluarga_person_id
+                await this.familyService.updateFamily(familyId, {
+                    kepala_keluarga_person_id: personId
+                });
+
+                // Step 4 (BARU): Simpan data ekonomi
+                if (formData.economicData && formData.economicData.periode) {
+                    await this.familyService.saveEconomicAssessment(familyId, formData.economicData);
+                    Logger.info(MODULE_NAME, 'Data ekonomi berhasil disimpan', { familyId });
+                }
+
+                this.showAlert('Data keluarga dan ekonomi berhasil disimpan!', 'success', 0);
+                setTimeout(() => {
+                    window.location.href = `/?familyId=${familyId}`;
+                }, 2000);
+            }
+            Logger.info(MODULE_NAME, 'Submit form berhasil');
+        } catch (error) {
+            this.showError(error, 'Gagal menyimpan data keluarga');
+            Logger.error(MODULE_NAME, 'Submit form gagal', error);
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    async loadFamilyData(familyId) {
+        Logger.info(MODULE_NAME, `Load data keluarga ${familyId} untuk mode edit`);
+        this.showLoading(true);
+        try {
             const { family } = await this.familyService.getFamilyDetail(familyId);
 
-            // Populate form dengan data keluarga
+            // Populate Bagian A
             this.setFieldValue('no_kk', family.no_kk);
             this.setFieldValue('alamat_jalan', family.alamat.jalan);
             this.setFieldValue('alamat_rt', family.alamat.rt);
@@ -441,7 +425,6 @@ class FamilyFormController extends BaseController {
             this.setFieldValue('kondisi_rumah', family.kondisi_rumah);
             this.setFieldValue('akses_air_bersih', family.akses_air_bersih);
 
-            // Load data kepala keluarga jika ada
             if (family.kepala_keluarga_person_id) {
                 const persons = await this.personService.getPersonsByFamily(familyId);
                 const kepalaKeluarga = persons.find(p => p.hubungan_dlm_keluarga === 'kepala_keluarga');
@@ -458,6 +441,38 @@ class FamilyFormController extends BaseController {
                 }
             }
 
+            // BARU: Populate Bagian C (Data Ekonomi) jika ada
+            const { latestAssessment } = await this.familyService.getFamilyDetail(familyId); // Re-fetch atau ambil dari object yang sama jika di-refactor
+            if (latestAssessment) {
+                this.setFieldValue('eco_periode', latestAssessment.periode);
+                this.setFieldValue('eco_sumber_pendapatan', latestAssessment.sumber_pendapatan_utama);
+                this.setFieldValue('eco_total_pendapatan', new Intl.NumberFormat('id-ID').format(latestAssessment.total_pendapatan));
+
+                this.setFieldValue('eco_pengeluaran_makan', new Intl.NumberFormat('id-ID').format(latestAssessment.pengeluaran.makan));
+                this.setFieldValue('eco_pengeluaran_listrik_air', new Intl.NumberFormat('id-ID').format(latestAssessment.pengeluaran.listrik_air));
+                this.setFieldValue('eco_pengeluaran_pendidikan', new Intl.NumberFormat('id-ID').format(latestAssessment.pengeluaran.pendidikan));
+                this.setFieldValue('eco_pengeluaran_kesehatan', new Intl.NumberFormat('id-ID').format(latestAssessment.pengeluaran.kesehatan));
+                this.setFieldValue('eco_pengeluaran_lainnya', new Intl.NumberFormat('id-ID').format(latestAssessment.pengeluaran.lainnya));
+
+                if (latestAssessment.aset) {
+                    document.getElementById('aset_motor').checked = latestAssessment.aset.motor;
+                    document.getElementById('aset_mobil').checked = latestAssessment.aset.mobil;
+                    document.getElementById('aset_kulkas').checked = latestAssessment.aset.kulkas;
+                    document.getElementById('aset_tv').checked = latestAssessment.aset.tv;
+                    document.getElementById('aset_tanah').checked = latestAssessment.aset.tanah;
+                }
+
+                if (latestAssessment.penerima_bantuan_pemerintah) {
+                    latestAssessment.penerima_bantuan_pemerintah.forEach(bantuan => {
+                        const el = document.querySelector(`input[name^="bantuan_"][value="${bantuan}"]`);
+                        if (el) el.checked = true;
+                    });
+                }
+
+                // Trigger kalkulasi awal
+                this.updateEconomicSummary();
+            }
+
             Logger.info(MODULE_NAME, 'Data keluarga berhasil dimuat untuk edit');
         } catch (error) {
             this.showError(error, 'Gagal memuat data keluarga');
@@ -468,12 +483,9 @@ class FamilyFormController extends BaseController {
     }
 }
 
-// Inisialisasi controller saat DOM siap
 document.addEventListener('DOMContentLoaded', async () => {
     const controller = new FamilyFormController();
     await controller.init();
-
-    // Expose ke window untuk debug (hapus sebelum production)
     window.familyFormController = controller;
     console.log('✅ FamilyFormController dimuat');
 });

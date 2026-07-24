@@ -5,3 +5,4 @@ backups/
 .firebase
 firebase-debug.log
 firestore-debug.log
+public/src/config/env.js 

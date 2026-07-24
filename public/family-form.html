@@ -337,19 +337,176 @@
                     </div>
 
                     <!-- ============================================ -->
-                    <!-- BAGIAN C: DATA EKONOMI (Placeholder Hari 2)   -->
+                    <!-- BAGIAN C: DATA EKONOMI                       -->
                     <!-- ============================================ -->
                     <div class="form-section" id="economicSection">
                         <h5 class="form-section-title">
                             <i class="bi bi-wallet2 me-2"></i>
                             C. Data Ekonomi Keluarga
-                            <span class="badge bg-warning text-dark ms-2">Akan dilengkapi di Hari 2</span>
                         </h5>
-                        <p class="text-muted">
-                            Bagian ini akan mencakup: total pendapatan, pengeluaran (makan, listrik/air, pendidikan,
-                            kesehatan, lainnya),
-                            aset (motor, mobil, kulkas, TV, tanah), dan penerima bantuan pemerintah.
-                        </p>
+
+                        <!-- Periode Survei -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label for="eco_periode" class="form-label required-field">Periode Survei</label>
+                                <input type="text" class="form-control" id="eco_periode" name="eco_periode"
+                                    placeholder="Contoh: 2026-S1" required>
+                                <div class="form-text">Format: Tahun-Semester atau Tahun-Bulan</div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="eco_sumber_pendapatan" class="form-label required-field">Sumber Pendapatan
+                                    Utama</label>
+                                <input type="text" class="form-control" id="eco_sumber_pendapatan"
+                                    name="eco_sumber_pendapatan" placeholder="Contoh: Berdagang, Gaji PNS, Buruh Harian"
+                                    required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="eco_total_pendapatan" class="form-label required-field">Total Pendapatan
+                                    (Rp/bulan)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" class="form-control format-rupiah" id="eco_total_pendapatan"
+                                        name="eco_total_pendapatan" placeholder="0" inputmode="numeric" required>
+                                </div>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <h6 class="text-muted mb-3 border-bottom pb-2">Rincian Pengeluaran Bulanan</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label for="eco_pengeluaran_makan" class="form-label">Makan & Minum</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" class="form-control format-rupiah eco-pengeluaran"
+                                        id="eco_pengeluaran_makan" name="eco_pengeluaran_makan" placeholder="0"
+                                        inputmode="numeric">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="eco_pengeluaran_listrik_air" class="form-label">Listrik & Air</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" class="form-control format-rupiah eco-pengeluaran"
+                                        id="eco_pengeluaran_listrik_air" name="eco_pengeluaran_listrik_air"
+                                        placeholder="0" inputmode="numeric">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="eco_pengeluaran_pendidikan" class="form-label">Pendidikan</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" class="form-control format-rupiah eco-pengeluaran"
+                                        id="eco_pengeluaran_pendidikan" name="eco_pengeluaran_pendidikan"
+                                        placeholder="0" inputmode="numeric">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="eco_pengeluaran_kesehatan" class="form-label">Kesehatan</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" class="form-control format-rupiah eco-pengeluaran"
+                                        id="eco_pengeluaran_kesehatan" name="eco_pengeluaran_kesehatan" placeholder="0"
+                                        inputmode="numeric">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="eco_pengeluaran_lainnya" class="form-label">Lainnya</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" class="form-control format-rupiah eco-pengeluaran"
+                                        id="eco_pengeluaran_lainnya" name="eco_pengeluaran_lainnya" placeholder="0"
+                                        inputmode="numeric">
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="text-muted mb-3 border-bottom pb-2">Aset yang Dimiliki</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-2 col-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="aset_motor" name="aset_motor">
+                                    <label class="form-check-label" for="aset_motor">Motor</label>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="aset_mobil" name="aset_mobil">
+                                    <label class="form-check-label" for="aset_mobil">Mobil</label>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="aset_kulkas" name="aset_kulkas">
+                                    <label class="form-check-label" for="aset_kulkas">Kulkas</label>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="aset_tv" name="aset_tv">
+                                    <label class="form-check-label" for="aset_tv">TV</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 col-8">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="aset_tanah" name="aset_tanah">
+                                    <label class="form-check-label" for="aset_tanah">Tanah / Rumah</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="text-muted mb-3 border-bottom pb-2">Penerima Bantuan Pemerintah</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3 col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bantuan_pkh" name="bantuan_pkh"
+                                        value="PKH">
+                                    <label class="form-check-label" for="bantuan_pkh">PKH</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bantuan_bpnt"
+                                        name="bantuan_bpnt" value="BPNT">
+                                    <label class="form-check-label" for="bantuan_bpnt">BPNT / Sembako</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bantuan_pbi" name="bantuan_pbi"
+                                        value="PBI">
+                                    <label class="form-check-label" for="bantuan_pbi">PBI (KIS)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bantuan_kip" name="bantuan_kip"
+                                        value="KIP">
+                                    <label class="form-check-label" for="bantuan_kip">KIP (Pendidikan)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bantuan_lainnya"
+                                        name="bantuan_lainnya" value="Lainnya">
+                                    <label class="form-check-label" for="bantuan_lainnya">Lainnya</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Real-time Summary Box -->
+                        <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+                            <div>
+                                <strong>Total Pengeluaran:</strong> <span id="summary_total_pengeluaran" class="fs-5">Rp
+                                    0</span>
+                            </div>
+                            <div class="text-end">
+                                <strong>Saldo (Surplus/Defisit):</strong>
+                                <span id="summary_selisih" class="fs-5 fw-bold text-success">Rp 0</span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- ============================================ -->
