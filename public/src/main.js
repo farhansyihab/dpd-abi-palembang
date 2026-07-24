@@ -83,24 +83,46 @@ async function handleLogout() {
 function setupAuthListener() {
   AuthService.onAuthStateChanged(async (user) => {
     if (user) {
-      // User sedang login
       Logger.info(MODULE_NAME, 'User terdeteksi login', { email: user.email });
       userName.textContent = user.displayName || user.email;
       userEmail.textContent = user.email;
 
-      // Cek authorization status untuk ditampilkan di UI
       try {
         const isAuthorized = await AuthService.checkAuthorization(user.email);
+
         if (isAuthorized) {
           authStatus.innerHTML = '<span class="badge bg-success">✓ Authorized</span>';
+
+          // 🎯 BONUS UX: Redirect ke halaman yang dituju sebelum login
+          const urlParams = new URLSearchParams(window.location.search);
+          const returnUrl = urlParams.get('returnUrl');
+
+          if (returnUrl && returnUrl !== '/') {
+            Logger.info(MODULE_NAME, `Redirect ke halaman tujuan: ${returnUrl}`);
+
+            setTimeout(() => {
+              window.location.href = decodeURIComponent(returnUrl);
+            }, 1000);
+
+            // PENTING: return di sini agar eksekusi berhenti dan tidak lanjut ke showView
+            return;
+          }
+
+          // Jika tidak ada returnUrl, tampilkan success view
+          showView('successView');
+
         } else {
+          // JIKA TIDAK AUTHORIZED, JANGAN REDIRECT. Tampilkan error dan berhenti.
           authStatus.innerHTML = '<span class="badge bg-danger">✗ Not Authorized</span>';
+          Logger.warn(MODULE_NAME, `User ${user.email} tidak ada di whitelist`);
+          showView('errorView'); // Atau biarkan di successView tapi dengan badge merah
+          errorMessage.textContent = `Email ${user.email} tidak memiliki akses. Silakan hubungi admin.`;
         }
       } catch (err) {
         authStatus.innerHTML = '<span class="badge bg-warning">? Auth Check Failed</span>';
+        Logger.error(MODULE_NAME, 'Gagal cek otorisasi di auth listener', err);
       }
 
-      showView('successView');
     } else {
       // User tidak login → tampilkan view login
       Logger.info(MODULE_NAME, 'User tidak login, tampilkan form login');

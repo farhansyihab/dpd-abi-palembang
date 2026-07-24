@@ -32,20 +32,32 @@ class FamilyFormController extends BaseController {
     /**
      * Inisialisasi controller — pasang event listener, setup validasi real-time.
      */
-    init() {
+    /**
+     * Inisialisasi controller — cek auth dulu, baru setup form.
+     */
+    async init() {
         super.init();
         Logger.info(MODULE_NAME, 'Inisialisasi form keluarga');
 
-        // Cek apakah ini mode edit (ada parameter ?id=xxx di URL)
+        // 🔐 1. AUTH GUARD: Pastikan user sudah login & authorized
+        const isAuthorized = await this.requireAuth();
+        if (!isAuthorized) {
+            // requireAuth() sudah handle redirect, cukup return untuk hentikan init
+            return;
+        }
+
+        // 🔐 2. Cek mode edit (ada parameter ?id=xxx di URL)
+        // DEKLARASI urlParams HANYA SATU KALI DI SINI
         const urlParams = new URLSearchParams(window.location.search);
         const familyId = urlParams.get('id');
+
         if (familyId) {
             this.isEditMode = true;
             this.currentFamilyId = familyId;
             this.loadFamilyData(familyId);
         }
 
-        // Pasang event listener
+        // 🔐 3. Setup form (hanya dijalankan jika user sudah authorized)
         this.setupEventListeners();
         this.setupRealtimeValidation();
         this.setupAutoFormat();
@@ -457,9 +469,9 @@ class FamilyFormController extends BaseController {
 }
 
 // Inisialisasi controller saat DOM siap
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const controller = new FamilyFormController();
-    controller.init();
+    await controller.init();
 
     // Expose ke window untuk debug (hapus sebelum production)
     window.familyFormController = controller;

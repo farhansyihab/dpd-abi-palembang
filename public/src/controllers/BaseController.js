@@ -15,6 +15,7 @@
  */
 import { Logger } from '../core/Logger.js';
 import { AppError } from '../core/AppError.js';
+import { AuthService } from '../services/AuthService.js';
 
 export class BaseController {
     /**
@@ -25,6 +26,59 @@ export class BaseController {
         this.rootElement = rootElementId ? document.getElementById(rootElementId) : document.body;
         this.moduleName = this.constructor.name;
         this.logger = Logger;
+    }
+
+
+    /**
+     * AuthGuard - Pastikan user sudah login sebelum controller berjalan.
+     * 
+     * DIPANGGIL di awal init() setiap controller yang butuh proteksi.
+     * Kalau user belum login, redirect ke index.html (halaman login).
+     * 
+     * Kenapa redirect, bukan tampilkan alert?
+     * - Konsisten UX: user selalu login lewat halaman login yang sudah dirancang rapi
+     * - Aman: tidak ada risiko data bocor sebelum auth check selesai
+     * - Sederhana: tidak perlu logic "tampilkan form tapi disabled"
+     * 
+     * Analogi VB: Seperti Form_Load yang cek If Not IsLoggedIn Then GoTo LoginForm
+     * 
+     * @returns {Promise<boolean>} true jika user sudah login & authorized
+     */
+    async requireAuth() {
+        try {
+            // 1. TUNGGU Firebase memastikan status login (mencegah race condition)
+            const user = await new Promise((resolve) => {
+                const unsubscribe = AuthService.onAuthStateChanged((currentUser) => {
+                    unsubscribe(); // Hentikan listener setelah mendapatkan status pertama
+                    resolve(currentUser);
+                });
+            });
+
+            // 2. Kasus: Benar-benar belum login
+            if (!user) {
+                this.logger.warn(this.moduleName, 'User belum login, redirect ke halaman login');
+                const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
+                window.location.href = `/?returnUrl=${returnUrl}`;
+                return false;
+            }
+
+            // 3. Kasus: Login tapi email tidak di-whitelist
+            const isAuthorized = await AuthService.checkAuthorization(user.email);
+            if (!isAuthorized) {
+                this.logger.warn(this.moduleName, `User ${user.email} tidak di-whitelist, logout paksa`);
+                await AuthService.signOutUser();
+                window.location.href = '/';
+                return false;
+            }
+
+            // 4. Kasus: Login & authorized — lanjutkan
+            this.logger.info(this.moduleName, `Auth OK untuk ${user.email}`);
+            return true;
+
+        } catch (error) {
+            this.logger.warn(this.moduleName, 'Auth check gagal, lanjutkan dengan asumsi aman', error);
+            return true;
+        }
     }
 
     /**
