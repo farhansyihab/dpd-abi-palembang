@@ -4,19 +4,8 @@
  * Analogi PHP: Seperti index.php yang load semua komponen.
  */
 
-// Aktifkan emulator hanya saat development lokal
-import { connectAuthEmulator } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { connectFirestoreEmulator } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
 import { auth, db } from './config/FirebaseConfig.js';
-
-// Cek apakah kita di localhost (emulator mode)
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  // connectAuthEmulator(auth, 'http://127.0.0.1:9099');
-  console.log('🔧 Mode EMULATOR aktif');
-}
-
-
 import { AuthService } from './services/AuthService.js';
 import { Logger } from './core/Logger.js';
 
@@ -216,4 +205,8 @@ import('./services/SearchService.js')
   .then(mod => { window.searchService = new mod.SearchService(); console.log('✅ SearchService dimuat'); });
 
 import('./services/ProgramService.js')
-  .then(mod => { window.programService = new mod.ProgramService(); console.log('✅ ProgramService dimuat'); });  
+  .then(mod => { window.programService = new mod.ProgramService(); console.log('✅ ProgramService dimuat'); });
+
+import('./controllers/FamilyFormController.js')
+  .then(() => { console.log('✅ FamilyFormController dimuat'); })
+  .catch(err => console.error('❌ Gagal FamilyFormController', err));  
