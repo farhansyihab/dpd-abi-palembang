@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Anggota Keluarga - DPD ABI Palembang</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .navbar-brand,
+        .nav-link {
+            color: white !important;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .required-field::after {
+            content: " *";
+            color: #dc3545;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/"><i class="bi bi-house-door me-2"></i>DPD ABI Palembang</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="alert-container" class="container"></div>
+
+    <main class="container pb-5">
+        <!-- Header Info Keluarga -->
+        <div class="info-card">
+            <h5 class="border-bottom pb-2 mb-3"><i class="bi bi-people me-2"></i>Info Keluarga</h5>
+            <div class="row g-3">
+                <div class="col-md-4"><strong>No. KK:</strong> <span id="info_no_kk">-</span></div>
+                <div class="col-md-4"><strong>Kepala Keluarga:</strong> <span id="info_nama_kk">-</span></div>
+                <div class="col-md-4"><strong>Alamat:</strong> <span id="info_alamat">-</span></div>
+            </div>
+        </div>
+
+        <!-- Tabel List Anggota -->
+        <div class="table-container">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Daftar Anggota Keluarga</h5>
+                <button type="button" class="btn btn-success" id="btnTambahAnggota">
+                    <i class="bi bi-plus-circle me-1"></i> Tambah Anggota
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="personTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>NIK</th>
+                            <th>Nama</th>
+                            <th>Hubungan</th>
+                            <th>Usia</th>
+                            <th>Pekerjaan</th>
+                            <th>Status ABI</th>
+                            <th class="text-center" width="150">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="personTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">Memuat data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL FORM (Untuk Tambah / Edit 1 Orang) -->
+    <div class="modal fade" id="personModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalTitle">Tambah Anggota</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="personModalForm" novalidate>
+                        <input type="hidden" id="modal_person_id"> <!-- Untuk mode Edit -->
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label required-field">NIK</label>
+                                <input type="text" class="form-control" id="modal_nik" maxlength="16"
+                                    inputmode="numeric" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label required-field">Nama Lengkap</label>
+                                <input type="text" class="form-control" id="modal_nama" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required-field">Hubungan</label>
+                                <select class="form-select" id="modal_hubungan" required>
+                                    <option value="">-- Pilih --</option>
+                                    <option value="kepala_keluarga">Kepala Keluarga</option>
+                                    <option value="istri">Istri</option>
+                                    <option value="anak">Anak</option>
+                                    <option value="lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tempat Lahir</label>
+                                <input type="text" class="form-control" id="modal_tempat_lahir">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tanggal Lahir</label>
+                                <input type="date" class="form-control" id="modal_tanggal_lahir">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label required-field">Jenis Kelamin</label>
+                                <select class="form-select" id="modal_jenis_kelamin" required>
+                                    <option value="">--</option>
+                                    <option value="L">Laki-laki</option>
+                                    <option value="P">Perempuan</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Pendidikan Terakhir</label>
+                                <select class="form-select" id="modal_pendidikan">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Tidak Sekolah">Tidak Sekolah</option>
+                                    <option value="SD">SD</option>
+                                    <option value="SMP">SMP</option>
+                                    <option value="SMA">SMA</option>
+                                    <option value="D3">D3</option>
+                                    <option value="S1">S1</option>
+                                    <option value="S2">S2</option>
+                                    <option value="S3">S3</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Pekerjaan</label>
+                                <input type="text" class="form-control" id="modal_pekerjaan">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Penghasilan (Rp/bulan)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" class="form-control format-rupiah" id="modal_penghasilan"
+                                        inputmode="numeric" placeholder="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Status Keanggotaan ABI</label>
+                                <select class="form-select" id="modal_status_abi">
+                                    <option value="simpatisan">Simpatisan</option>
+                                    <option value="anggota">Anggota</option>
+                                    <option value="kader">Kader</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label d-block">Riwayat Kaderisasi</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="modal_kader_ptd" value="PTD">
+                                    <label class="form-check-label" for="modal_kader_ptd">PTD</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="modal_kader_ptm" value="PTM">
+                                    <label class="form-check-label" for="modal_kader_ptm">PTM</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnSimpanModal">
+                        <span class="spinner-border spinner-border-sm d-none" id="modalLoading"></span>
+                        Simpan Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="/src/controllers/PersonFormController.js"></script>
+</body>
+
+</html>

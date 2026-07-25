@@ -210,6 +210,21 @@ export class BaseController {
     }
 
     /**
+     * Set teks ke elemen non-input (seperti span, div, p) dengan aman.
+     * 
+     * @param {string} fieldId - ID elemen
+     * @param {any} value - Nilai yang akan diset
+     */
+    setTextContent(fieldId, value) {
+        const field = document.getElementById(fieldId);
+        if (!field) {
+            this.logger.warn(this.moduleName, `Elemen tidak ditemukan: ${fieldId}`);
+            return;
+        }
+        field.textContent = value !== null && value !== undefined ? value : '-';
+    }
+
+    /**
      * Tampilkan error validasi inline di bawah field tertentu.
      * 
      * @param {string} fieldId - ID field input
