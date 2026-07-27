@@ -135,7 +135,7 @@ class FamilyFormController extends BaseController {
 
                 this.showAlert('Data keluarga dan ekonomi berhasil disimpan!', 'success', 0);
                 setTimeout(() => {
-                    window.location.href = `/?familyId=${familyId}`;
+                    window.location.href = `/family-form.html?id=${familyId}`;
                 }, 2000);
             }
             Logger.info(MODULE_NAME, 'Submit form berhasil');

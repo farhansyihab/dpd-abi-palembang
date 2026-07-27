@@ -1,14 +1,15 @@
 /**
  * SearchService - Pencarian & filtering data keluarga.
- *
+ * 
  * STRATEGI (sesuai Rancangan bagian 4):
  * - Load daftar ringkas keluarga ke memory browser saat halaman pencarian dibuka
  * - Filter di client dengan .includes() + debounce
  * - Jauh lebih cepat & murah (read quota) dibanding query Firestore tiap ketik
- *
- * CATATAN: Untuk skala >10.000 record, pertimbangkan migrasi ke Typesense/Meilisearch.
+ * 
+ * UPDATE HARI 2: Enrichment data dengan nama Kepala Keluarga dari persons collection
  */
 import { FamilyRepository } from '../repositories/FamilyRepository.js';
+import { PersonRepository } from '../repositories/PersonRepository.js'; // 🆕 IMPORT BARU
 import { AppError } from '../core/AppError.js';
 import { Logger } from '../core/Logger.js';
 
@@ -17,22 +18,16 @@ const MODULE_NAME = 'SearchService';
 export class SearchService {
     constructor() {
         this.familyRepo = new FamilyRepository();
-        this._cachedIndex = []; // Cache daftar keluarga di memory
-        this._lastLoadTime = null; // Timestamp terakhir load
-        this._cacheTTL = 5 * 60 * 1000; // Cache valid 5 menit
+        this.personRepo = new PersonRepository(); // 🆕 TAMBAHAN
+        this._cachedIndex = [];
+        this._lastLoadTime = null;
+        this._cacheTTL = 5 * 60 * 1000;
     }
 
-    /**
-     * Load indeks keluarga ke memory browser.
-     * Dipanggil sekali saat halaman pencarian dibuka, atau saat cache expired.
-     *
-     * @param {boolean} forceReload - Paksa reload meski cache belum expired
-     */
     async loadIndex(forceReload = false) {
         try {
             Logger.info(MODULE_NAME, 'Memuat indeks keluarga ke memory');
 
-            // Cek apakah cache masih valid
             const now = Date.now();
             if (!forceReload && this._cachedIndex.length > 0 && this._lastLoadTime) {
                 const age = now - this._lastLoadTime;
@@ -42,17 +37,30 @@ export class SearchService {
                 }
             }
 
-            // Load dari Firestore (limit besar untuk pencarian)
+            // 1. Load families
             const families = await this.familyRepo.list(10000);
 
-            // Simpan hanya field yang diperlukan untuk pencarian (hemat memory)
+            // 2. 🆕 Load persons untuk enrichment nama Kepala Keluarga
+            Logger.info(MODULE_NAME, 'Memuat data persons untuk enrichment nama KK...');
+            const allPersons = await this.personRepo.list(10000);
+
+            // 3. 🆕 Buat Map lookup: person_id → nama (hanya untuk kepala_keluarga)
+            const kepalaKeluargaMap = new Map();
+            allPersons
+                .filter(p => p.hubungan_dlm_keluarga === 'kepala_keluarga')
+                .forEach(p => kepalaKeluargaMap.set(p.id, p.nama));
+
+            Logger.info(MODULE_NAME, `Ditemukan ${kepalaKeluargaMap.size} kepala keluarga dari ${allPersons.length} persons`);
+
+            // 4. Enrich family data dengan nama KK dan alamat singkat
             this._cachedIndex = families.map(f => ({
                 id: f.id,
                 no_kk: f.no_kk,
+                nama_kepala_keluarga: kepalaKeluargaMap.get(f.kepala_keluarga_person_id) || 'Belum ada data',
                 search_name_lower: f.search_name_lower || '',
                 search_address_lower: f.search_address_lower || '',
                 status_bantuan: f.status_bantuan,
-                kepala_keluarga_person_id: f.kepala_keluarga_person_id
+                alamat_singkat: this._formatAlamatSingkat(f.alamat)
             }));
 
             this._lastLoadTime = now;
@@ -63,124 +71,77 @@ export class SearchService {
     }
 
     /**
-     * Cari keluarga berdasarkan nama (kepala keluarga).
-     * Filter di client menggunakan .includes() pada field search_name_lower.
-     *
-     * @param {string} term - Kata kunci pencarian (case-insensitive)
-     * @returns {Array<Object>} Array keluarga yang cocok
+     * 🆕 Format alamat menjadi versi singkat untuk display
+     * Contoh: "Jl. Merdeka No. 10, RT 001, RW 002, Ilir Barat"
      */
-    searchByName(term) {
-        try {
-            if (!term || term.trim() === '') {
-                return [];
-            }
-
-            const termLower = term.toLowerCase().trim();
-            Logger.info(MODULE_NAME, `Mencari nama: "${term}"`);
-
-            const results = this._cachedIndex.filter(family =>
-                family.search_name_lower.includes(termLower)
-            );
-
-            Logger.info(MODULE_NAME, `Ditemukan ${results.length} hasil`);
-            return results;
-        } catch (error) {
-            throw this._handleError(error, 'searchByName');
-        }
+    _formatAlamatSingkat(alamat) {
+        if (!alamat) return '-';
+        const parts = [
+            alamat.jalan,
+            alamat.rt ? `RT ${alamat.rt}` : '',
+            alamat.rw ? `RW ${alamat.rw}` : '',
+            alamat.kelurahan || '',
+            alamat.kecamatan || ''
+        ].filter(p => p);
+        return parts.join(', ');
     }
 
     /**
-     * Cari keluarga berdasarkan alamat.
-     * Filter di client menggunakan .includes() pada field search_address_lower.
-     *
-     * @param {string} term - Kata kunci pencarian (case-insensitive)
-     * @returns {Array<Object>} Array keluarga yang cocok
+     * PENCARIAN TERPADU (Hari 2)
+     * Mencari berdasarkan Nama ATAU Alamat secara bersamaan.
      */
-    searchByAddress(term) {
+    search(term) {
         try {
             if (!term || term.trim() === '') {
                 return [];
             }
-
             const termLower = term.toLowerCase().trim();
-            Logger.info(MODULE_NAME, `Mencari alamat: "${term}"`);
+            Logger.info(MODULE_NAME, `Mencari (Nama/Alamat): "${term}"`);
 
             const results = this._cachedIndex.filter(family =>
+                family.search_name_lower.includes(termLower) ||
                 family.search_address_lower.includes(termLower)
             );
 
             Logger.info(MODULE_NAME, `Ditemukan ${results.length} hasil`);
             return results;
         } catch (error) {
-            throw this._handleError(error, 'searchByAddress');
+            throw this._handleError(error, 'search');
         }
     }
 
-    /**
-     * Cari keluarga berdasarkan No. KK (exact match).
-     *
-     * @param {string} noKK - No. KK (16 digit)
-     * @returns {Object|null} Keluarga yang cocok atau null
-     */
+    searchByName(term) { return this.search(term); }
+    searchByAddress(term) { return this.search(term); }
+
     searchByNoKK(noKK) {
         try {
-            if (!noKK || noKK.trim() === '') {
-                return null;
-            }
-
+            if (!noKK || noKK.trim() === '') return null;
             Logger.info(MODULE_NAME, `Mencari No. KK: "${noKK}"`);
-
             const result = this._cachedIndex.find(family => family.no_kk === noKK);
-            Logger.info(MODULE_NAME, result ? 'Ditemukan' : 'Tidak ditemukan');
             return result || null;
         } catch (error) {
             throw this._handleError(error, 'searchByNoKK');
         }
     }
 
-    /**
-     * Filter keluarga berdasarkan status bantuan.
-     *
-     * @param {string} status - Status ('mustahiq', 'donatur', 'belum_ditentukan')
-     * @returns {Array<Object>} Array keluarga dengan status tersebut
-     */
     filterByStatus(status) {
         try {
             Logger.info(MODULE_NAME, `Filter status: "${status}"`);
-
-            const results = this._cachedIndex.filter(family =>
-                family.status_bantuan === status
-            );
-
-            Logger.info(MODULE_NAME, `Ditemukan ${results.length} hasil`);
+            const results = this._cachedIndex.filter(family => family.status_bantuan === status);
             return results;
         } catch (error) {
             throw this._handleError(error, 'filterByStatus');
         }
     }
 
-    /**
-     * Invalidate cache (paksa reload di pencarian berikutnya).
-     * Dipanggil setelah ada perubahan data (create/update/delete family).
-     */
     invalidateCache() {
         Logger.info(MODULE_NAME, 'Cache di-invalidate');
         this._cachedIndex = [];
         this._lastLoadTime = null;
     }
 
-    /**
-     * Helper: bungkus error jadi AppError
-     */
     _handleError(error, methodName) {
-        if (error instanceof AppError) {
-            return error;
-        }
-        return new AppError(
-            `Gagal ${methodName}: ${error.message}`,
-            MODULE_NAME,
-            error.code || 'SEARCH_SERVICE_ERROR',
-            error
-        );
+        if (error instanceof AppError) return error;
+        return new AppError(`Gagal ${methodName}: ${error.message}`, MODULE_NAME, error.code || 'SEARCH_SERVICE_ERROR', error);
     }
 }
