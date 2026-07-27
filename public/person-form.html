@@ -182,6 +182,7 @@
                                     <option value="simpatisan">Simpatisan</option>
                                     <option value="anggota">Anggota</option>
                                     <option value="kader">Kader</option>
+                                    <option value="lainnya">Lainnya</option>
                                 </select>
                             </div>
                             <div class="col-12">
@@ -209,8 +210,87 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="/src/controllers/PersonFormController.js"></script>
+    <!-- ============================================ -->
+    <!-- MODAL RELASI ANTAR-PERSON (Baru & Diperbaiki)-->
+    <!-- ============================================ -->
+    <div class="modal fade" id="relationModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="bi bi-diagram-3 me-2"></i>Kelola Relasi Antar-Person</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-body">
+                        <!-- 🆕 SECTION: Daftar Relasi Existing -->
+                        <div id="existingRelationsContainer" class="d-none mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-list-check me-2"></i>Relasi yang Sudah Tercatat
+                            </h6>
+                            <ul id="existingRelationsList" class="list-group">
+                                <!-- Akan di-render oleh PersonRelationManager -->
+                            </ul>
+                        </div>
+
+                        <hr class="my-3">
+                        <h6 class="text-muted mb-3">
+                            <i class="bi bi-plus-circle me-2"></i>Tambah Relasi Baru
+                        </h6>
+                        <form id="relationForm" novalidate>
+                            <input type="hidden" id="source_person_id">
+                            <input type="hidden" id="target_person_id">
+
+                            <div class="mb-3">
+                                <label class="form-label required-field">NIK Target Relasi</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="relasi_target_nik" maxlength="16"
+                                        inputmode="numeric" placeholder="Masukkan 16 digit NIK target">
+                                    <button type="button" class="btn btn-outline-secondary" id="btnCariTarget">
+                                        <i class="bi bi-search"></i> Cari
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback"></div>
+                                <div class="form-text">Cari person yang ingin dihubungkan (bisa dari KK yang berbeda).
+                                </div>
+                            </div>
+
+                            <div class="mb-3 p-3 bg-light rounded border">
+                                <small class="text-muted d-block mb-1">Status Target:</small>
+                                <strong id="target_nama_display" class="text-primary">-</strong>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label required-field">Tipe Relasi</label>
+                                <select class="form-select" id="relasi_tipe" required>
+                                    <option value="">-- Pilih Tipe Relasi --</option>
+                                    <option value="anak">Anak</option>
+                                    <option value="orang_tua">Orang Tua</option>
+                                    <option value="saudara">Saudara Kandung</option>
+                                    <option value="paman_bibi">Paman / Bibi</option>
+                                    <option value="keponakan">Keponakan</option>
+                                    <option value="mertua">Mertua</option>
+                                    <option value="ipar">Ipar</option>
+                                    <option value="sepupu">Sepupu/Misan</option>
+                                    <option value="lainnya">Lainnya</option>
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-info text-white" id="btnSimpanRelasi">
+                            <span class="spinner-border spinner-border-sm d-none" id="relasiLoading"></span>
+                            Simpan Relasi
+                        </button>
+                    </div>
+                </div> <!-- Penutup modal-content -->
+            </div> <!-- Penutup modal-dialog -->
+        </div> <!-- Penutup relationModal -->
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script type="module" src="/src/controllers/PersonFormController.js"></script>
 </body>
 
 </html>

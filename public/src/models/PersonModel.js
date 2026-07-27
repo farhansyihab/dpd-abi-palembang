@@ -67,7 +67,7 @@ export class PersonModel {
             errors.push('Hubungan dalam keluarga tidak valid');
         }
 
-        const statusAbiValid = ['simpatisan', 'anggota', 'kader'];
+        const statusAbiValid = ['simpatisan', 'anggota', 'kader', 'Lainnya'];
         if (!statusAbiValid.includes(this.status_abi)) {
             errors.push('Status ABI tidak valid');
         }

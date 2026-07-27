@@ -50,6 +50,9 @@ export class PersonRelationModel {
             'saudara',
             'paman_bibi',
             'keponakan',
+            'mertua',
+            'ipar',
+            'sepupu',
             'lainnya'
         ];
         if (!tipeRelasiValid.includes(this.tipe_relasi)) {

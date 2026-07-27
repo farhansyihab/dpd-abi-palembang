@@ -168,6 +168,73 @@ export class PersonService {
     }
 
     /**
+     * Ambil semua relasi yang melibatkan person tertentu.
+     * Dipakai untuk menampilkan daftar relasi existing di UI.
+     *
+     * @param {string} personId - ID person
+     * @returns {Promise<Array<{relation: PersonRelationModel, relatedPerson: PersonModel}>>}
+     */
+    async getRelationsForPerson(personId) {
+        try {
+            Logger.info(MODULE_NAME, `Mengambil relasi untuk person ${personId}`);
+            const relations = await this.relationRepo.findByPersonId(personId);
+
+            // Untuk setiap relasi, ambil data person terkait (target)
+            const enrichedRelations = [];
+            for (const rel of relations) {
+                // Tentukan mana yang "target" (bukan personId yang sedang dilihat)
+                const targetPersonId = rel.person_id === personId
+                    ? rel.related_person_id
+                    : rel.person_id;
+
+                const targetPerson = await this.personRepo.getById(targetPersonId);
+
+                enrichedRelations.push({
+                    relation: rel,
+                    relatedPerson: targetPerson,
+                    direction: rel.person_id === personId ? 'source' : 'target'
+                });
+            }
+
+            Logger.info(MODULE_NAME, `Ditemukan ${enrichedRelations.length} relasi untuk person ${personId}`);
+            return enrichedRelations;
+        } catch (error) {
+            throw this._handleError(error, 'getRelationsForPerson');
+        }
+    }
+
+    /**
+     * 🆕 Hapus relasi berdasarkan ID.
+     * @param {string} relationId - ID relasi yang akan dihapus
+     */
+    async deleteRelation(relationId) {
+        try {
+            Logger.info(MODULE_NAME, `Menghapus relasi ${relationId}`);
+            await this.relationRepo.delete(relationId);
+            Logger.info(MODULE_NAME, `Relasi ${relationId} berhasil dihapus`);
+        } catch (error) {
+            throw this._handleError(error, 'deleteRelation');
+        }
+    }
+
+    /**
+     * Cari person berdasarkan NIK (digunakan untuk mencari target relasi).
+     *
+     * @param {string} nik - NIK (16 digit)
+     * @returns {Promise<PersonModel|null>}
+     */
+    async getPersonByNIK(nik) {
+        try {
+            Logger.info(MODULE_NAME, `Mencari person berdasarkan NIK: ${nik}`);
+            Validator.isValidNIK(nik);
+            const person = await this.personRepo.findByNIK(nik);
+            return person;
+        } catch (error) {
+            throw this._handleError(error, 'getPersonByNIK');
+        }
+    }
+
+    /**
      * Helper: bungkus error jadi AppError
      */
     _handleError(error, methodName) {

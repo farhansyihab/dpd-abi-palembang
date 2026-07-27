@@ -22,15 +22,25 @@ export class PersonFormModalManager {
         // Validasi real-time di modal
         this.validator.setupRealtimeValidation();
 
-        // Tombol Simpan di Modal
-        document.getElementById('btnSimpanModal').addEventListener('click', () => this.handleSubmit());
+        // ✅ PERBAIKAN: Tambahkan defensive check untuk btnSimpanModal
+        const btnSimpan = document.getElementById('btnSimpanModal');
+        if (btnSimpan) {
+            btnSimpan.addEventListener('click', () => this.handleSubmit());
+        } else {
+            console.warn(`[${MODULE_NAME}] PERINGATAN: Elemen 'btnSimpanModal' tidak ditemukan di DOM. Periksa file person-form.html!`);
+        }
 
-        // Reset form saat modal ditutup
-        document.getElementById('personModal').addEventListener('hidden.bs.modal', () => {
-            this.form.reset();
-            this.form.classList.remove('was-validated');
-            this.controller.clearAllFieldErrors();
-        });
+        // ✅ PERBAIKAN: Tambahkan defensive check untuk personModal
+        const personModal = document.getElementById('personModal');
+        if (personModal) {
+            personModal.addEventListener('hidden.bs.modal', () => {
+                if (this.form) {
+                    this.form.reset();
+                    this.form.classList.remove('was-validated');
+                }
+                this.controller.clearAllFieldErrors();
+            });
+        }
     }
 
     openForAdd() {

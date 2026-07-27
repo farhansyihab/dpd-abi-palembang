@@ -22,14 +22,13 @@ export class PersonListManager {
 
     renderTable(persons) {
         this.tableBody.innerHTML = '';
-
         if (persons.length === 0) {
-            this.tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Belum ada data anggota. Klik "Tambah Anggota".</td></tr>';
+            this.tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Belum ada data anggota. Klik "Tambah Anggota".</td></tr>';
             return;
         }
-
         persons.forEach(person => {
             const tr = document.createElement('tr');
+            // TAMBAHAN: Kolom aksi sekarang punya 3 tombol (Relasi, Edit, Hapus)
             tr.innerHTML = `
                 <td>${person.nik}</td>
                 <td class="fw-bold">${person.nama}</td>
@@ -38,10 +37,13 @@ export class PersonListManager {
                 <td>${person.pekerjaan || '-'}</td>
                 <td><span class="badge bg-info text-dark">${person.status_abi}</span></td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-warning me-1 btn-edit" data-id="${person.id}">
+                    <button class="btn btn-sm btn-info me-1 btn-relasi" data-id="${person.id}" title="Kelola Relasi">
+                        <i class="bi bi-diagram-3"></i>
+                    </button>
+                    <button class="btn btn-sm btn-warning me-1 btn-edit" data-id="${person.id}" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-danger btn-delete" data-id="${person.id}">
+                    <button class="btn btn-sm btn-danger btn-delete" data-id="${person.id}" title="Hapus">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
@@ -49,17 +51,21 @@ export class PersonListManager {
             this.tableBody.appendChild(tr);
         });
 
-        // Event Delegation untuk tombol Edit & Hapus (sangat efisien, tidak freeze)
+        // Event Delegation untuk tombol Relasi, Edit & Hapus
         this.tableBody.addEventListener('click', (e) => {
+            const relasiBtn = e.target.closest('.btn-relasi');
             const editBtn = e.target.closest('.btn-edit');
             const deleteBtn = e.target.closest('.btn-delete');
 
+            if (relasiBtn) {
+                const personId = relasiBtn.dataset.id;
+                this.controller.relationManager.openForPerson(personId); // Delegasi ke RelationManager
+            }
             if (editBtn) {
                 const personId = editBtn.dataset.id;
                 const personData = persons.find(p => p.id === personId);
                 this.controller.modalManager.openForEdit(personData);
             }
-
             if (deleteBtn) {
                 const personId = deleteBtn.dataset.id;
                 this.handleDelete(personId);
