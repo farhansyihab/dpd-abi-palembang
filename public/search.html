@@ -52,6 +52,16 @@
         .result-item:hover {
             background-color: #f1f3f5;
         }
+
+        #family-tab {
+            font-size: 1.1rem;
+            color: black !important;
+        }
+
+        #person-tab {
+            font-size: 1.1rem;
+            color: black !important;
+        }
     </style>
 </head>
 
@@ -84,41 +94,150 @@
     <!-- Main Content -->
     <main class="container pb-5" id="searchView">
         <div class="row justify-content-center">
-            <div class="col-lg-8">
+            <div class="col-lg-10">
                 <div class="mb-4">
-                    <h2 class="fw-bold"><i class="bi bi-search text-primary me-2"></i>Pencarian Data Keluarga</h2>
-                    <p class="text-muted mb-0">Cari berdasarkan nama kepala keluarga. Hasil akan muncul secara
-                        real-time.</p>
+                    <h2 class="fw-bold"><i class="bi bi-search text-primary me-2"></i>Pencarian & Filter Data</h2>
+                    <p class="text-muted mb-0">Cari keluarga berdasarkan nama/alamat, atau filter person berdasarkan
+                        kriteria tertentu.</p>
                 </div>
 
-                <div class="search-card">
-                    <!-- Search Input -->
-                    <div class="mb-4">
-                        <label for="searchInput" class="form-label fw-bold">Kata Kunci Pencarian</label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <!-- 🆕 HARI 2: Update placeholder -->
-                            <input type="text" class="form-control" id="searchInput"
-                                placeholder="Ketik nama atau alamat (misal: 'budi' atau 'jl. merdeka')..."
-                                autocomplete="off">
-                            <button class="btn btn-outline-secondary d-none" id="clearSearchBtn" type="button">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
+                <!-- Tab Navigation -->
+                <ul class="nav nav-tabs mb-4" id="searchTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="family-tab" data-bs-toggle="tab"
+                            data-bs-target="#familySearch" type="button" role="tab">
+                            <i class="bi bi-people me-1"></i> Cari Keluarga
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="person-tab" data-bs-toggle="tab" data-bs-target="#personFilter"
+                            type="button" role="tab">
+                            <i class="bi bi-person me-1"></i> Filter Person
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="searchTabContent">
+                    <!-- Tab 1: Cari Keluarga (Hari 1-2) -->
+                    <div class="tab-pane fade show active" id="familySearch" role="tabpanel">
+                        <div class="search-card">
+                            <div class="mb-4">
+                                <label for="searchInput" class="form-label fw-bold">Kata Kunci Pencarian</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" id="searchInput"
+                                        placeholder="Ketik nama atau alamat (misal: 'budi' atau 'jl. merdeka')..."
+                                        autocomplete="off">
+                                    <button class="btn btn-outline-secondary d-none" id="clearSearchBtn" type="button">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Sistem akan mencari secara otomatis berdasarkan <strong>Nama
+                                        Kepala Keluarga</strong> atau <strong>Alamat</strong> (jeda 300ms).</div>
+                            </div>
+
+                            <div id="searchResultsContainer">
+                                <div class="text-center text-muted py-5">
+                                    <i class="bi bi-inbox fs-1"></i>
+                                    <p class="mt-2">Mulai ketik untuk mencari data keluarga.</p>
+                                </div>
+                            </div>
                         </div>
-                        <!-- 🆕 HARI 2: Update helper text -->
-                        <div class="form-text">Sistem akan mencari secara otomatis berdasarkan <strong>Nama Kepala
-                                Keluarga</strong> atau <strong>Alamat</strong> (jeda 300ms).</div>
                     </div>
 
-                    <!-- Results Container -->
-                    <div id="searchResultsContainer">
-                        <div class="text-center text-muted py-5">
-                            <i class="bi bi-inbox fs-1"></i>
-                            <p class="mt-2">Mulai ketik untuk mencari data keluarga.</p>
+                    <!-- Tab 2: Filter Person (Hari 3) -->
+                    <div class="tab-pane fade" id="personFilter" role="tabpanel">
+                        <div class="search-card">
+                            <h5 class="mb-3"><i class="bi bi-funnel me-2"></i>Filter Person</h5>
+
+                            <div class="row g-3 mb-4">
+                                <!-- Filter Pekerjaan -->
+                                <div class="col-md-4">
+                                    <label for="filterPekerjaan" class="form-label fw-bold">Pekerjaan</label>
+                                    <input type="text" class="form-control" id="filterPekerjaan"
+                                        placeholder="Ketik pekerjaan (misal: 'buruh')..." autocomplete="off">
+                                    <div class="form-text">Partial match (mengandung kata)</div>
+                                </div>
+
+                                <!-- Filter Status ABI -->
+                                <div class="col-md-4">
+                                    <label for="filterStatusABI" class="form-label fw-bold">Status ABI</label>
+                                    <select class="form-select" id="filterStatusABI">
+                                        <option value="">-- Semua --</option>
+                                    </select>
+                                </div>
+
+                                <!-- Filter Kaderisasi -->
+                                <div class="col-md-4">
+                                    <label for="filterKaderisasi" class="form-label fw-bold">Kaderisasi</label>
+                                    <select class="form-select" id="filterKaderisasi">
+                                        <option value="">-- Semua --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 🆕 HARI 4: Filter Usia & Penghasilan -->
+                            <div class="row g-3 mb-4">
+                                <!-- Filter Usia -->
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Rentang Usia (tahun)</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="filterUsiaMin" placeholder="Min"
+                                            min="0" max="120">
+                                        <span class="input-group-text">s/d</span>
+                                        <input type="number" class="form-control" id="filterUsiaMax" placeholder="Max"
+                                            min="0" max="120">
+                                    </div>
+                                    <div class="form-text">Kosongkan jika tidak ingin memfilter usia</div>
+                                </div>
+
+                                <!-- Filter Penghasilan -->
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold">Rentang Penghasilan (Rp/bulan)</label>
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text">Preset</span>
+                                        <select class="form-select" id="filterPenghasilanBracket">
+                                            <option value="">-- Semua --</option>
+                                            <!-- Akan di-populate oleh SearchController -->
+                                            <option value="custom">Custom (isi manual)</option>
+                                        </select>
+                                    </div>
+                                    <div id="customPenghasilanContainer" class="d-none">
+                                        <div class="input-group">
+                                            <span class="input-group-text">Rp</span>
+                                            <input type="text" class="form-control format-rupiah-filter"
+                                                id="filterPenghasilanMin" placeholder="Dari" inputmode="numeric">
+                                            <span class="input-group-text">s/d</span>
+                                            <input type="text" class="form-control format-rupiah-filter"
+                                                id="filterPenghasilanMax" placeholder="Sampai" inputmode="numeric">
+                                        </div>
+                                        <div class="form-text">Kosongkan salah satu untuk filter satu arah (misal:
+                                            hanya "di atas X")</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mb-4">
+                            <button type="button" class="btn btn-primary" id="btnTerapkanFilter">
+                                <i class="bi bi-check-circle me-1"></i> Terapkan Filter
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnResetFilter">
+                                <i class="bi bi-x-circle me-1"></i> Reset
+                            </button>
+                        </div>
+
+                        <div id="personFilterResultsContainer">
+                            <div class="text-center text-muted py-5">
+                                <i class="bi bi-funnel fs-1"></i>
+                                <p class="mt-2">Gunakan filter di atas untuk mencari person.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </main>
 
@@ -133,6 +252,17 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Entry point controller -->
     <script type="module" src="/src/controllers/SearchController.js"></script>
+    <script>
+        // Auto-format Rupiah untuk input filter penghasilan (tanpa module, langsung jalan)
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.format-rupiah-filter').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    let value = e.target.value.replace(/\D/g, '');
+                    e.target.value = value ? new Intl.NumberFormat('id-ID').format(value) : '';
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>
