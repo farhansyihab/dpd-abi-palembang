@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Data Keluarga - DPD ABI Palembang</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .navbar-brand,
+        .nav-link {
+            color: white !important;
+        }
+
+        .card-report {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 3rem 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/"><i class="bi bi-house-door me-2"></i>DPD ABI Palembang</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Dashboard</a>
+                <a class="nav-link active" href="/report.html">Laporan</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert Container -->
+    <div id="alert-container" class="container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay"
+        class="d-none position-fixed top-0 start-0 w-100 h-100 bg-white bg-opacity-75 d-flex align-items-center justify-content-center"
+        style="z-index: 9999;">
+        <div class="text-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+            <p class="mt-3 text-muted fw-bold">Sedang menyusun data laporan...</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container pb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card-report text-center">
+                    <i class="bi bi-file-earmark-pdf text-danger display-1"></i>
+                    <h2 class="mt-4 fw-bold">Laporan Data Keluarga & Anggota</h2>
+                    <p class="text-muted mb-4 fs-5">
+                        Laporan ini akan men-generate tabel PDF lengkap dengan kolom: No, Nama, Alamat (Rowspan), Usia,
+                        No HP/WA, Pekerjaan, Pendidikan, Relasi, dan Penghasilan/bulan.
+                    </p>
+                    <button id="btnGenerateReport" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow-sm">
+                        <i class="bi bi-download me-2"></i>Download Laporan PDF
+                    </button>
+                    <p class="text-muted small mt-3 mb-0">
+                        <i class="bi bi-info-circle me-1"></i>Pastikan Anda sudah login dan memiliki akses.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light py-3 mt-auto">
+        <div class="container text-center text-muted">
+            <small>&copy; 2026 DPD ABI Palembang — Sistem Pendataan Komunitas</small>
+        </div>
+    </footer>
+
+    <!-- ========================================== -->
+    <!-- DEPENDENSI WAJIB (HARUS DI ATAS CONTROLLER) -->
+    <!-- ========================================== -->
+    <!-- 1. jsPDF Core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- 2. jsPDF AutoTable (Plugin untuk fitur rowspan & tabel kompleks) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- 3. Bootstrap JS (untuk komponen UI jika diperlukan) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- 4. Entry Point Controller -->
+    <script type="module" src="/src/controllers/ReportController.js"></script>
+</body>
+
+</html>
