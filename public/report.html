@@ -35,15 +35,7 @@
 
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/"><i class="bi bi-house-door me-2"></i>DPD ABI Palembang</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">Dashboard</a>
-                <a class="nav-link active" href="/report.html">Laporan</a>
-            </div>
-        </div>
-    </nav>
+    <div id="navbar-container"></div>
 
     <!-- Alert Container -->
     <div id="alert-container" class="container"></div>
@@ -100,6 +92,10 @@
 
     <!-- 4. Entry Point Controller -->
     <script type="module" src="/src/controllers/ReportController.js"></script>
+    <script type="module">
+        import { renderNavbar } from '/src/components/NavbarComponent.js';
+        renderNavbar();
+    </script>
 </body>
 
 </html>
