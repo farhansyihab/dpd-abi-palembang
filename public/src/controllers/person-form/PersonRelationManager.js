@@ -1,81 +1,100 @@
+// public/src/controllers/person-form/PersonRelationManager.js
+/**
+ * PersonRelationManager - Orchestrator untuk modal relasi antar-person.
+ *
+ * TUGAS UTAMA:
+ * - Lifecycle modal relasi (buka/tutup/reset)
+ * - Wiring event listener (tombol Cari & Simpan)
+ * - Orkestrasi simpan relasi baru (delegasi ke RelationSearchHandler untuk cari,
+ *   RelationListRenderer untuk load daftar)
+ *
+ * DELEGASI:
+ * - Pencarian target NIK → RelationSearchHandler
+ * - Load/render daftar relasi existing → RelationListRenderer
+ *
+ * PENTING: Class ini TIDAK mengandung logic pencarian, rendering, atau format.
+ * Semua didelegasikan ke helper masing-masing (Composition Pattern).
+ *
+ * Analogi: Seperti FamilyFormController setelah refactor Sesi 7 — orchestrator tipis
+ * yang memegang referensi ke helper, bukan tempat semua logika ditulis.
+ */
 import { Logger } from '../../core/Logger.js';
+import { RelationSearchHandler } from './RelationSearchHandler.js';
+import { RelationListRenderer } from './RelationListRenderer.js';
 
 const MODULE_NAME = 'PersonRelationManager';
 
 export class PersonRelationManager {
+    /**
+     * @param {PersonFormController} controller - Reference ke controller utama
+     */
     constructor(controller) {
         this.controller = controller;
         this.modalEl = document.getElementById('relationModal');
         this.modalInstance = this.modalEl ? new bootstrap.Modal(this.modalEl) : null;
         this.form = document.getElementById('relationForm');
+
+        // ✅ PERBAIKAN BUG A: hanya ada SATU definisi openForPerson sekarang
+        // (sebelumnya ada 2 definisi yang saling menimpa)
+
+        // Compose helper classes
+        this.searchHandler = new RelationSearchHandler(this);
+        this.listRenderer = new RelationListRenderer(this);
+
         this.setupListeners();
     }
 
+    /**
+     * Setup event listener untuk modal relasi.
+     * Hanya wiring — logic ada di helper masing-masing.
+     */
     setupListeners() {
-        // Tombol Cari Target
-        document.getElementById('btnCariTarget')?.addEventListener('click', () => this.handleCariTarget());
+        // Tombol Cari Target → delegasi ke RelationSearchHandler
+        const btnCari = document.getElementById('btnCariTarget');
+        if (btnCari) {
+            btnCari.addEventListener('click', () => this.searchHandler.handleCariTarget());
+        }
 
-        // Tombol Simpan Relasi
-        document.getElementById('btnSimpanRelasi')?.addEventListener('click', () => this.handleSimpanRelasi());
+        // Tombol Simpan Relasi → handle di orchestrator (karena ini operasi utama)
+        const btnSimpan = document.getElementById('btnSimpanRelasi');
+        if (btnSimpan) {
+            btnSimpan.addEventListener('click', () => this.handleSimpanRelasi());
+        }
 
         // Reset state saat modal ditutup
-        this.modalEl?.addEventListener('hidden.bs.modal', () => {
-            this.form?.reset();
-            this.controller.clearAllFieldErrors();
-            document.getElementById('target_nama_display').textContent = '-';
-            document.getElementById('target_person_id').value = '';
-        });
+        if (this.modalEl) {
+            this.modalEl.addEventListener('hidden.bs.modal', () => {
+                this._resetModalState();
+            });
+        }
     }
 
-    openForPerson(personId) {
+    /**
+     * Buka modal relasi untuk person tertentu.
+     * Dipanggil dari PersonListManager saat user klik tombol "Relasi" di tabel.
+     *
+     * @param {string} personId - ID person yang akan dikelola relasinya
+     */
+    async openForPerson(personId) {
+        // Reset form & state
         document.getElementById('source_person_id').value = personId;
         this.controller.clearAllFieldErrors();
-        this.form?.reset();
-        document.getElementById('target_nama_display').textContent = '-';
-        document.getElementById('target_person_id').value = '';
-        this.modalInstance?.show();
+        this._resetModalState();
+
+        // Load daftar relasi existing (delegasi ke RelationListRenderer)
+        await this.listRenderer.loadExistingRelations(personId);
+
+        // Tampilkan modal
+        if (this.modalInstance) {
+            this.modalInstance.show();
+        }
+        Logger.info(MODULE_NAME, `Modal relasi dibuka untuk person ${personId}`);
     }
 
-    async handleCariTarget() {
-        const nikTarget = document.getElementById('relasi_target_nik').value.trim();
-        this.controller.clearFieldError('relasi_target_nik');
-
-        if (!nikTarget) {
-            this.controller.showFieldError('relasi_target_nik', 'NIK Target wajib diisi');
-            return;
-        }
-
-        try {
-            this.controller.showLoading(true);
-            // Delegasi ke Service Layer (Strict Layered Architecture)
-            const targetPerson = await this.controller.personService.getPersonByNIK(nikTarget);
-
-            if (!targetPerson) {
-                this.controller.showFieldError('relasi_target_nik', 'Person dengan NIK tersebut tidak ditemukan di sistem');
-                return;
-            }
-
-            const sourceId = document.getElementById('source_person_id').value;
-            if (targetPerson.id === sourceId) {
-                this.controller.showFieldError('relasi_target_nik', 'Tidak bisa membuat relasi dengan diri sendiri');
-                return;
-            }
-
-            // Simpan ID target yang valid ke hidden field
-            document.getElementById('target_person_id').value = targetPerson.id;
-            document.getElementById('target_nama_display').textContent = `${targetPerson.nama} (NIK: ${targetPerson.nik})`;
-            this.controller.showAlert('Target relasi ditemukan!', 'success', 3000);
-        } catch (error) {
-            this.controller.showError(error, 'Gagal mencari target relasi');
-        } finally {
-            this.controller.showLoading(false);
-            // Hapus class loading dari tombol cari jika ada
-            const btnCari = document.getElementById('btnCariTarget');
-            if (btnCari) btnCari.disabled = false;
-            this.controller.showAlert('Gagal mencari target relasi', 'danger', 3000);
-        }
-    }
-
+    /**
+     * Handle klik tombol "Simpan Relasi".
+     * Validasi input → delegasi ke PersonService.linkRelation() → tutup modal.
+     */
     async handleSimpanRelasi() {
         const sourceId = document.getElementById('source_person_id').value;
         const targetId = document.getElementById('target_person_id').value;
@@ -85,10 +104,16 @@ export class PersonRelationManager {
 
         this.controller.clearAllFieldErrors();
 
+        // Validasi: target harus sudah dipilih (lewat tombol Cari)
         if (!targetId) {
-            this.controller.showFieldError('relasi_target_nik', 'Harap cari dan pastikan target relasi ditemukan terlebih dahulu');
+            this.controller.showFieldError(
+                'relasi_target_nik',
+                'Harap cari dan pastikan target relasi ditemukan terlebih dahulu'
+            );
             return;
         }
+
+        // Validasi: tipe relasi wajib dipilih
         if (!tipeRelasi) {
             this.controller.showFieldError('relasi_tipe', 'Tipe relasi wajib dipilih');
             return;
@@ -100,17 +125,22 @@ export class PersonRelationManager {
 
             // Delegasi ke Service Layer
             await this.controller.personService.linkRelation(sourceId, targetId, tipeRelasi);
-
             this.controller.showAlert('Relasi antar-person berhasil ditambahkan!', 'success');
-            this.modalInstance?.hide();
+            Logger.info(MODULE_NAME, 'Relasi berhasil disimpan', { sourceId, targetId, tipeRelasi });
 
+            if (this.modalInstance) {
+                this.modalInstance.hide();
+            }
         } catch (error) {
-            // 🩹 QUICK WORKAROUND: Jika error karena data sudah ada (akibat retry emulator), anggap sukses.
+            // 🩹 QUICK WORKAROUND: Jika error karena data sudah ada (akibat retry emulator),
+            // anggap sukses.
             if (error.message.includes('ALREADY_EXISTS') || error.code === 'DUPLICATE_RELATION') {
                 this.controller.showAlert('Relasi sudah tercatat di sistem (Data valid).', 'success');
-                this.modalInstance?.hide();
+                if (this.modalInstance) {
+                    this.modalInstance.hide();
+                }
             } else {
-                // Jika error lain (misal: validasi gagal, network mati total), tampilkan error asli
+                // Error lain (validasi gagal, network mati total) → tampilkan error asli
                 this.controller.showError(error, 'Gagal menyimpan relasi');
             }
         } finally {
@@ -119,118 +149,21 @@ export class PersonRelationManager {
         }
     }
 
-    async openForPerson(personId) {
-        document.getElementById('source_person_id').value = personId;
-        this.controller.clearAllFieldErrors();
-        this.form?.reset();
-        document.getElementById('target_nama_display').textContent = '-';
-        document.getElementById('target_person_id').value = '';
-
-        // 🆕 Load daftar relasi existing
-        await this.loadExistingRelations(personId);
-
-        this.modalInstance?.show();
-    }
-
     /**
-     * 🆕 Muat dan render daftar relasi yang sudah ada untuk person ini.
+     * Helper: reset state modal ke kondisi awal.
+     * Dipanggil saat modal dibuka & saat modal ditutup.
      */
-    async loadExistingRelations(personId) {
-        const container = document.getElementById('existingRelationsContainer');
-        const listEl = document.getElementById('existingRelationsList');
-
-        try {
-            this.controller.showLoading(true);
-            const relations = await this.controller.personService.getRelationsForPerson(personId);
-
-            if (relations.length === 0) {
-                listEl.innerHTML = '<p class="text-muted text-center py-3 mb-0">Belum ada relasi tercatat untuk person ini.</p>';
-            } else {
-                listEl.innerHTML = relations.map(({ relation, relatedPerson, direction }) => {
-                    if (!relatedPerson) return ''; // Skip jika person target sudah dihapus
-
-                    // Tentukan label berdasarkan arah relasi
-                    let label;
-                    if (direction === 'source') {
-                        // Person ini → target
-                        label = `${this.formatTipeRelasi(relation.tipe_relasi)} dari ${relatedPerson.nama}`;
-                    } else {
-                        // Target → person ini (relasi terbalik)
-                        label = `${this.formatTipeRelasi(relation.tipe_relasi)} ke ${relatedPerson.nama}`;
-                    }
-
-                    return `
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="bi bi-diagram-3 text-info me-2"></i>
-                                <strong>${relatedPerson.nama}</strong>
-                                <small class="text-muted d-block">NIK: ${relatedPerson.nik} — ${label}</small>
-                            </div>
-                            <button class="btn btn-sm btn-outline-danger btn-hapus-relasi" 
-                                    data-relation-id="${relation.id}" 
-                                    title="Hapus relasi">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </li>
-                    `;
-                }).join('');
-
-                // Event delegation untuk tombol hapus
-                listEl.querySelectorAll('.btn-hapus-relasi').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const relationId = e.currentTarget.dataset.relationId;
-                        this.handleHapusRelasi(relationId, personId);
-                    });
-                });
-            }
-
-            container.classList.remove('d-none');
-        } catch (error) {
-            this.controller.showError(error, 'Gagal memuat daftar relasi');
-            listEl.innerHTML = '<p class="text-danger text-center py-3 mb-0">Gagal memuat data relasi.</p>';
-        } finally {
-            this.controller.showLoading(false);
+    _resetModalState() {
+        if (this.form) {
+            this.form.reset();
         }
-    }
-
-    /**
-     * 🆕 Format tipe relasi ke bahasa manusia
-     */
-    formatTipeRelasi(tipe) {
-        const map = {
-            'anak': 'Anak',
-            'orang_tua': 'Orang Tua',
-            'saudara': 'Saudara Kandung',
-            'paman_bibi': 'Paman/Bibi',
-            'keponakan': 'Keponakan',
-            'mertua': 'Mertua',
-            'ipar': 'Ipar',
-            'sepupu': 'Sepupu',
-            'lainnya': 'Lainnya'
-        };
-        return map[tipe] || tipe;
-    }
-
-    /**
-     * 🆕 Hapus relasi (soft delete — hapus dokumen dari collection)
-     */
-    async handleHapusRelasi(relationId, personId) {
-        if (!confirm('Yakin ingin menghapus relasi ini?')) return;
-
-        try {
-            this.controller.showLoading(true);
-            // Kita perlu akses langsung ke relationRepo untuk delete
-            // Ini sedikit melanggar strict layered, tapi untuk operasi delete sederhana masih bisa diterima
-            // Alternatif: tambahkan method deleteRelation() di PersonService
-            // await this.controller.personService.relationRepo.delete(relationId);
-            await this.controller.personService.deleteRelation(relationId);
-            this.controller.showAlert('Relasi berhasil dihapus.', 'success');
-            // Reload daftar relasi
-            await this.loadExistingRelations(personId);
-        } catch (error) {
-            this.controller.showError(error, 'Gagal menghapus relasi');
-        } finally {
-            this.controller.showLoading(false);
+        const targetNamaDisplay = document.getElementById('target_nama_display');
+        if (targetNamaDisplay) {
+            targetNamaDisplay.textContent = '-';
+        }
+        const targetPersonId = document.getElementById('target_person_id');
+        if (targetPersonId) {
+            targetPersonId.value = '';
         }
     }
 }
