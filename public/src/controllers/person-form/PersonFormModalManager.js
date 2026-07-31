@@ -71,6 +71,8 @@ export class PersonFormModalManager {
         this.setModalValue('modal_pekerjaan', person.pekerjaan);
         this.setModalValue('modal_penghasilan', this.formatter.formatRupiah(person.penghasilan_bulan || 0));
         this.setModalValue('modal_status_abi', person.status_abi);
+        this.setModalValue('modal_no_telp', person.no_telp || '');
+        this.setModalValue('modal_skills', person.skills || '');
 
         // Checkbox kaderisasi
         document.getElementById('modal_kader_ptd').checked = person.kaderisasi?.includes('PTD') || false;
@@ -121,8 +123,12 @@ export class PersonFormModalManager {
 
                 status_abi: this.getModalValue('modal_status_abi'),
                 kaderisasi: kaderisasi,
+                no_telp: this.getModalValue('modal_no_telp'),
+                skills: this.getModalValue('modal_skills'),
                 is_active: true
             };
+
+            console.log("🚀 DATA YANG AKAN DIKIRIM KE FIRESTORE:", personData);
 
             if (personId) {
                 await this.controller.personService.updatePerson(personId, personData);

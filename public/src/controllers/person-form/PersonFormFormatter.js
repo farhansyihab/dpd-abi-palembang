@@ -9,7 +9,12 @@ export class PersonFormFormatter {
         nik.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/\D/g, '');
         });
-
+        const noTelp = document.getElementById('modal_no_telp');
+        if (noTelp) {
+            noTelp.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^\d+\-\s()]/g, '');
+            });
+        }
         // Penghasilan: format Rupiah
         const penghasilan = document.getElementById('modal_penghasilan');
         penghasilan.addEventListener('input', (e) => this._formatRupiah(e));

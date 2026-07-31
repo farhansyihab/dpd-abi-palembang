@@ -32,6 +32,8 @@ export class PersonModel {
         this.is_independent = data.is_independent || false;
         this.is_active = data.is_active !== undefined ? data.is_active : true;
         this.catatan = data.catatan || '';
+        this.no_telp = data.no_telp || '';
+        this.skills = data.skills || '';
         this.created_at = data.created_at || null;
         this.updated_at = data.updated_at || null;
         this.created_by = data.created_by || null;
@@ -74,6 +76,9 @@ export class PersonModel {
 
         if (!Array.isArray(this.kaderisasi)) {
             errors.push('Kaderisasi harus berupa array');
+        }
+        if (this.no_telp && !/^[0-9+\-\s()]{8,15}$/.test(this.no_telp)) {
+            errors.push('No Telp/Wa tidak valid (8-15 digit, hanya angka dan simbol +-)');
         }
 
         return errors;
@@ -153,7 +158,9 @@ export class PersonModel {
             kaderisasi: this.kaderisasi,
             is_independent: this.is_independent,
             is_active: this.is_active,
-            catatan: this.catatan
+            catatan: this.catatan,
+            no_telp: this.no_telp,
+            skills: this.skills
         };
     }
 }

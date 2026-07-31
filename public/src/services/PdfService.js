@@ -193,7 +193,7 @@ export class PdfService {
                         p.nama || '-',                                     // 1: Nama
                         alamat,                                            // 2: Alamat (akan di-rowspan)
                         p.usia != null ? `${p.usia} th` : '-',            // 3: Usia
-                        p.no_hp_wa || '-',                                 // 4: No HP/WA
+                        p.no_telp || '-',                                 // 4: No HP/WA
                         p.pekerjaan || '-',                                // 5: Pekerjaan
                         p.pendidikan_terakhir || '-',                      // 6: Pendidikan
                         relasi,                                            // 7: Relasi
