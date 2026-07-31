@@ -154,13 +154,14 @@ if (document.readyState === 'loading') {
 }
 
 
-/** 
+/**
  * Bagian ini sudah selesai diuji coba dan berfungsi dengan baik.
 */
 
 
 // ===== DEBUG MODE: Expose ke window untuk uji console =====
 // HAPUS bagian ini sebelum deploy production!
+/** 
 console.log('🔄 Memuat Repository untuk debug...');
 
 import('./repositories/FamilyRepository.js')
@@ -232,3 +233,4 @@ import('./services/ProgramService.js')
 import('./controllers/FamilyFormController.js')
   .then(() => { console.log('✅ FamilyFormController dimuat'); })
   .catch(err => console.error('❌ Gagal FamilyFormController', err));  
+*/

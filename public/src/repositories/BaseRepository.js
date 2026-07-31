@@ -208,6 +208,22 @@ export class BaseRepository {
     }
 
     /**
+     * Set dokumen dengan ID spesifik (Digunakan untuk Restore Data)
+     * @param {string} id - ID dokumen asli
+     * @param {Object} data - Data plain object (sudah dalam format Firestore)
+     */
+    async setWithId(id, data) {
+        try {
+            const docRef = doc(this.db, this.collectionName, id);
+            // Kita tidak pakai Model validation di sini karena data sudah valid dari backup
+            await setDoc(docRef, data, { merge: true });
+            Logger.info(this.constructor.name, `Dokumen di-restore dengan ID: ${id}`);
+        } catch (error) {
+            throw this.handleError(error, 'setWithId');
+        }
+    }
+
+    /**
      * Handle error dan bungkus jadi AppError yang informatif
      * @param {Error} error - Error asli
      * @param {string} method - Nama method yang error
