@@ -52,35 +52,35 @@ export class PersonSearchResultRenderer {
                     `<span class="badge bg-warning text-dark me-1">${k}</span>`
                 ).join('');
             }
-
-            item.innerHTML = `
-                <div class="d-flex w-100 justify-content-between align-items-start">
-                    <div class="flex-grow-1">
-                        <h6 class="mb-1 fw-bold text-primary">
-                            <i class="bi bi-person-fill me-1"></i> ${person.nama}
-                        </h6>
-                        <small class="text-muted d-block mb-1">
-                            <i class="bi bi-card-text me-1"></i> NIK: ${person.nik}
-                        </small>
-                        <small class="text-muted d-block mb-1">
-                            <i class="bi bi-briefcase me-1"></i> ${person.pekerjaan || '-'}
-                            ${person.usia ? ` · ${person.usia} thn` : ''}
-                        </small>
-                        <small class="text-muted d-block mb-2">
-                            <i class="bi bi-people me-1"></i> KK: ${person.family_no_kk}
-                            <span class="ms-2"><i class="bi bi-geo-alt me-1"></i>${person.family_alamat}</span>
-                        </small>
-                        <div>
-                            ${statusBadge}
-                            ${kaderisasiBadges}
-                        </div>
-                    </div>
-                    <div class="text-end ms-3">
-                        <i class="bi bi-chevron-right text-muted"></i>
-                    </div>
-                </div>
-            `;
-
+            /** 
+                        item.innerHTML = `
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-bold text-primary">
+                                        <i class="bi bi-person-fill me-1"></i> ${person.nama}
+                                    </h6>
+                                    <small class="text-muted d-block mb-1">
+                                        <i class="bi bi-card-text me-1"></i> NIK: ${person.nik}
+                                    </small>
+                                    <small class="text-muted d-block mb-1">
+                                        <i class="bi bi-briefcase me-1"></i> ${person.pekerjaan || '-'}
+                                        ${person.usia ? ` · ${person.usia} thn` : ''}
+                                    </small>
+                                    <small class="text-muted d-block mb-2">
+                                        <i class="bi bi-people me-1"></i> KK: ${person.family_no_kk}
+                                        <span class="ms-2"><i class="bi bi-geo-alt me-1"></i>${person.family_alamat}</span>
+                                    </small>
+                                    <div>
+                                        ${statusBadge}
+                                        ${kaderisasiBadges}
+                                    </div>
+                                </div>
+                                <div class="text-end ms-3">
+                                    <i class="bi bi-chevron-right text-muted"></i>
+                                </div>
+                            </div>
+                        `;
+            */
             // Badge penghasilan
             let penghasilanBadge = '<span class="badge bg-light text-dark border">-</span>';
             if (person.penghasilan_bulan > 0) {
