@@ -1,106 +1,236 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistem Pendataan DPD ABI Palembang</title>
-  
-  <!-- Bootstrap 5 via CDN (seperti include library di VB/PHP) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#667eea">
+  <title>Dashboard - DPD ABI Palembang</title>
+  <!-- Bootstrap 5 via CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <style>
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #f5f6f8;
       min-height: 100vh;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      flex-direction: column;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
-    .login-card {
-      max-width: 480px;
+
+    .login-card,
+    .dashboard-card {
+      max-width: 600px;
       width: 100%;
+      margin: auto;
     }
+
     .card {
       border: none;
       border-radius: 1rem;
     }
+
     .btn-google {
       background-color: #fff;
       color: #333;
       border: 1px solid #ddd;
       font-weight: 500;
     }
+
     .btn-google:hover {
       background-color: #f8f9fa;
       border-color: #ccc;
     }
+
+    /* ===== DASHBOARD STYLES (Mobile-First) ===== */
+    .dashboard-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 24px 20px;
+      border-radius: 0 0 24px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .dashboard-header h4 {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .dashboard-header p {
+      opacity: 0.9;
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      padding: 0 20px 24px;
+    }
+
+    @media (min-width: 576px) {
+      .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .menu-grid .menu-card:last-child {
+        grid-column: span 2;
+      }
+    }
+
+    .menu-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px 16px;
+      text-align: center;
+      text-decoration: none;
+      color: #212529;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+    }
+
+    .menu-card:active {
+      transform: scale(0.96);
+      background: #f8f9fa;
+    }
+
+    .menu-card i {
+      font-size: 32px;
+      margin-bottom: 12px;
+      color: #667eea;
+    }
+
+    .menu-card h6 {
+      font-weight: 600;
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .menu-card small {
+      color: #6c757d;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .btn-logout-dashboard {
+      margin: 0 20px 24px;
+      border-radius: 12px;
+      padding: 12px;
+      font-weight: 500;
+    }
+
+    3
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <div class="login-card">
+  <div class="container py-4">
+
+    <!-- View 1: Form Login -->
+    <div id="loginView" class="login-card">
       <div class="card shadow-lg">
         <div class="card-body p-5 text-center">
           <h2 class="card-title mb-2 fw-bold">Sistem Pendataan</h2>
           <h5 class="text-muted mb-4">DPD ABI Palembang</h5>
-          
-          <!-- View 1: Form Login -->
-          <div id="loginView">
-            <p class="text-muted mb-4">
-              Silakan login dengan akun Google Anda yang terdaftar di whitelist.
-            </p>
-            <button id="btnLogin" class="btn btn-google btn-lg w-100 py-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-google me-2" viewBox="0 0 16 16" style="vertical-align: text-bottom;">
-                <path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 4.21-2.845 7.165-6.99 7.165-3.987 0-7.27-3.38-7.27-7.57 0-4.189 3.283-7.57 7.27-7.57 1.93 0 3.72.82 5.02 2.155l-2.09 2.09c-.76-.76-1.86-1.25-2.93-1.25-2.26 0-4.1 1.84-4.1 4.1s1.84 4.1 4.1 4.1c2.03 0 3.54-1.36 3.92-3.26h-3.92v-2.9h7.04z"/>
-              </svg>
-              Login dengan Google
-            </button>
-          </div>
-
-          <!-- View 2: Loading -->
-          <div id="loadingView" class="d-none">
-            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-3 text-muted">Memproses login...</p>
-          </div>
-
-          <!-- View 3: Login Berhasil -->
-          <div id="successView" class="d-none">
-            <div class="mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#198754" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
-                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-              </svg>
-            </div>
-            <h5 class="text-success mb-3">Login Berhasil!</h5>
-            <p class="mb-1">Selamat datang,</p>
-            <h6 class="fw-bold mb-1" id="userName">-</h6>
-            <p class="text-muted small mb-3" id="userEmail">-</p>
-            <div id="authStatus" class="mb-3"></div>
-            <button id="btnLogout" class="btn btn-outline-secondary w-100">Logout</button>
-          </div>
-
-          <!-- View 4: Error -->
-          <div id="errorView" class="d-none">
-            <div class="mb-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#dc3545" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
-                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-              </svg>
-            </div>
-            <h5 class="text-danger mb-3">Login Gagal</h5>
-            <p id="errorMessage" class="text-muted mb-3">-</p>
-            <button id="btnRetry" class="btn btn-primary w-100">Coba Lagi</button>
-          </div>
+          <p class="text-muted mb-4">
+            Silakan login dengan akun Google Anda yang terdaftar di whitelist.
+          </p>
+          <button id="btnLogin" class="btn btn-google btn-lg w-100 py-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-google me-2"
+              viewBox="0 0 16 16" style="vertical-align: text-bottom;">
+              <path
+                d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 4.21-2.845 7.165-6.99 7.165-3.987 0-7.27-3.38-7.27-7.57 0-4.189 3.283-7.57 7.27-7.57 1.93 0 3.72.82 5.02 2.155l-2.09 2.09c-.76-.76-1.86-1.25-2.93-1.25-2.26 0-4.1 1.84-4.1 4.1s1.84 4.1 4.1 4.1c2.03 0 3.54-1.36 3.92-3.26h-3.92v-2.9h7.04z" />
+            </svg>
+            Login dengan Google
+          </button>
         </div>
       </div>
-      <p class="text-center text-white-50 small mt-3 mb-0">
-        &copy; 2026 DPD ABI Palembang
-      </p>
+      <p class="text-center text-muted small mt-4 mb-0">&copy; 2026 DPD ABI Palembang</p>
     </div>
+
+    <!-- View 2: Loading -->
+    <div id="loadingView" class="login-card d-none">
+      <div class="card shadow-lg">
+        <div class="card-body p-5 text-center">
+          <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-3 text-muted">Memproses login...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- View 3: Dashboard (Beranda Mobile-First) -->
+    <div id="successView" class="dashboard-card d-none">
+      <!-- Header Info User -->
+      <div class="dashboard-header text-center">
+        <i class="bi bi-person-circle" style="font-size: 48px; margin-bottom: 8px; display: block;"></i>
+        <h4 id="userName">-</h4>
+        <p id="userEmail">-</p>
+        <div id="authStatus" class="mt-2"></div>
+      </div>
+
+      <!-- Menu Grid -->
+      <div class="menu-grid">
+        <div class="menu-card" id="menuFamily" role="button" tabindex="0">
+          <i class="bi bi-people-fill"></i>
+          <h6>Tambah Keluarga</h6>
+          <small>Input data KK & Ekonomi</small>
+        </div>
+
+        <div class="menu-card" id="menuSearch" role="button" tabindex="0">
+          <i class="bi bi-search"></i>
+          <h6>Pencarian Data</h6>
+          <small>Cari KK atau Filter Person</small>
+        </div>
+
+        <div class="menu-card" id="menuReport" role="button" tabindex="0">
+          <i class="bi bi-file-earmark-pdf-fill"></i>
+          <h6>Laporan PDF</h6>
+          <small>Download rekap data keluarga</small>
+        </div>
+      </div>
+
+      <!-- Logout Button -->
+      <button id="btnLogout" class="btn btn-outline-danger btn-logout-dashboard w-auto mx-auto d-block"
+        style="max-width: 200px;">
+        <i class="bi bi-box-arrow-right me-2"></i>Logout
+      </button>
+
+      <p class="text-center text-muted small mb-0">&copy; 2026 DPD ABI Palembang</p a>
+    </div>
+
+    <!-- View 4: Error -->
+    <div id="errorView" class="login-card d-none">
+      <div class="card shadow-lg">
+        <div class="card-body p-5 text-center">
+          <div class="mb-3">
+            <svg xmlns="http://www.w3.org2000/svg" width="64" height="64" fill="#dc3545"
+              class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
+              <path
+                d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z" />
+            </svg>
+          </div>
+          <h5 class="text-danger mb-3">Login Gagal</h5>
+          <p id="errorMessage" class="text-muted mb-3">-</p>
+          <button id="btnRetry" class="btn btn-primary w-100">Coba Lagi</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Entry point aplikasi (type="module" = aktifkan ES6 modules) -->
+  <!-- Entry point aplikasi -->
   <script type="module" src="/src/main.js"></script>
 </body>
+
 </html>

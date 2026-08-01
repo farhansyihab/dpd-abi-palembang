@@ -131,6 +131,55 @@ function setupAuthListener() {
   });
 }
 
+// ==========================================
+// SMART ROUTING: Deteksi Layar & Arahkan
+// ==========================================
+/**
+ * Fungsi untuk mengarahkan pengguna ke versi Mobile atau Desktop
+ * berdasarkan lebar layar saat ini.
+ * @param {string} desktopPath - Path tujuan versi desktop (misal: '/family-form.html')
+ */
+function navigateBasedOnScreen(desktopPath) {
+  // 768px adalah breakpoint standar untuk tablet kecil / smartphone (max 10 inch)
+  const isMobileScreen = window.innerWidth <= 768;
+
+  if (isMobileScreen) {
+    // Arahkan ke folder /mobile/
+    window.location.href = `/mobile${desktopPath}`;
+  } else {
+    // Arahkan ke versi desktop normal
+    window.location.href = desktopPath;
+  }
+}
+
+// Pasang Event Listener ke Menu Dashboard saat DOM siap
+document.addEventListener('DOMContentLoaded', () => {
+  const menuFamily = document.getElementById('menuFamily');
+  const menuSearch = document.getElementById('menuSearch');
+  const menuReport = document.getElementById('menuReport');
+
+  if (menuFamily) {
+    menuFamily.addEventListener('click', () => navigateBasedOnScreen('/family-form.html'));
+    // Dukungan keyboard untuk aksesibilitas
+    menuFamily.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') navigateBasedOnScreen('/family-form.html');
+    });
+  }
+
+  if (menuSearch) {
+    menuSearch.addEventListener('click', () => navigateBasedOnScreen('/search.html'));
+    menuSearch.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') navigateBasedOnScreen('/search.html');
+    });
+  }
+
+  if (menuReport) {
+    menuReport.addEventListener('click', () => navigateBasedOnScreen('/report.html'));
+    menuReport.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') navigateBasedOnScreen('/report.html');
+    });
+  }
+});
 /**
  * Inisialisasi aplikasi
  */
