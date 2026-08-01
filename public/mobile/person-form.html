@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Anggota Keluarga - ABI Mobile</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/mobile/css/mobile.css">
+</head>
+
+<body>
+    <div id="alert-container"></div>
+
+    <div id="loading-overlay" class="d-none">
+        <div class="text-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+            <p class="mt-3 text-muted fw-semibold">Memproses...</p>
+        </div>
+    </div>
+
+    <main class="container">
+        <!-- Page Header -->
+        <div class="mobile-page-header">
+            <button type="button" class="btn-back" id="btnBack" aria-label="Kembali">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+            <div style="flex: 1;">
+                <h1>
+                    <i class="bi bi-people me-1"></i>
+                    Anggota Keluarga
+                </h1>
+                <div class="subtitle">Kelola data anggota KK</div>
+            </div>
+        </div>
+
+        <!-- Info Keluarga (Compact) -->
+        <div class="info-card-compact">
+            <div class="info-row">
+                <span class="info-label"><i class="bi bi-card-text me-1"></i>No. KK</span>
+                <span class="info-value" id="info_no_kk">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="bi bi-person me-1"></i>Kepala Keluarga</span>
+                <span class="info-value" id="info_nama_kk">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label"><i class="bi bi-geo-alt me-1"></i>Alamat</span>
+                <span class="info-value" id="info_alamat">-</span>
+            </div>
+        </div>
+
+        <!-- Section Title -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h5 class="mb-0" style="font-size: 15px; font-weight: 600;">
+                <i class="bi bi-list-ul me-1"></i>Daftar Anggota
+            </h5>
+            <span class="badge bg-primary" id="personCount">0</span>
+        </div>
+
+        <!-- List Anggota (Table yang akan di-transform ke card via CSS) -->
+        <div id="personTable">
+            <table class="mobile-table-card" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>NIK</th>
+                        <th>Nama</th>
+                        <th>Hubungan</th>
+                        <th>Usia</th>
+                        <th>Pekerjaan</th>
+                        <th>Status ABI</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="personTableBody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px 20px; color: #6c757d;">
+                            <i class="bi bi-people"
+                                style="font-size: 40px; opacity: 0.3; display: block; margin-bottom: 8px;"></i>
+                            Memuat data...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- FAB (Floating Action Button) untuk Tambah Anggota -->
+    <button type="button" class="mobile-fab" id="btnTambahAnggota" aria-label="Tambah Anggota">
+        <i class="bi bi-plus-lg"></i>
+    </button>
+
+    <!-- MODAL: Tambah/Edit Anggota (Full-screen di mobile) -->
+    <div class="modal fade" id="personModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="background: var(--mobile-gradient); color: white;">
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="bi bi-person-plus me-2"></i>Tambah Anggota
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="personModalForm" novalidate>
+                        <input type="hidden" id="modal_person_id">
+
+                        <!-- NIK -->
+                        <div class="mb-3">
+                            <label class="form-label required-field">NIK</label>
+                            <input type="text" class="form-control" id="modal_nik" maxlength="16" inputmode="numeric"
+                                placeholder="16 digit angka" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Nama -->
+                        <div class="mb-3">
+                            <label class="form-label required-field">Nama Lengkap</label>
+                            <input type="text" class="form-control" id="modal_nama" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+
+                        <!-- Hubungan -->
+                        <div class="mb-3">
+                            <label class="form-label required-field">Hubungan dalam Keluarga</label>
+                            <select class="form-select" id="modal_hubungan" required>
+                                <option value="">-- Pilih --</option>
+                                <option value="kepala_keluarga">Kepala Keluarga</option>
+                                <option value="istri">Istri</option>
+                                <option value="anak">Anak</option>
+                                <option value="lainnya">Lainnya</option>
+                            </select>
+                        </div>
+
+                        <!-- Tempat & Tanggal Lahir -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Tempat Lahir</label>
+                                <input type="text" class="form-control" id="modal_tempat_lahir">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Tanggal Lahir</label>
+                                <input type="date" class="form-control" id="modal_tanggal_lahir">
+                            </div>
+                        </div>
+
+                        <!-- Jenis Kelamin -->
+                        <div class="mb-3">
+                            <label class="form-label required-field">Jenis Kelamin</label>
+                            <select class="form-select" id="modal_jenis_kelamin" required>
+                                <option value="">-- Pilih --</option>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                        </div>
+
+                        <!-- Pendidikan -->
+                        <div class="mb-3">
+                            <label class="form-label">Pendidikan Terakhir</label>
+                            <select class="form-select" id="modal_pendidikan">
+                                <option value="">-- Pilih --</option>
+                                <option value="Tidak Sekolah">Tidak Sekolah</option>
+                                <option value="SD">SD</option>
+                                <option value="SMP">SMP</option>
+                                <option value="SMA">SMA</option>
+                                <option value="D3">D3</option>
+                                <option value="S1">S1</option>
+                                <option value="S2">S2</option>
+                                <option value="S3">S3</option>
+                            </select>
+                        </div>
+
+                        <!-- Pekerjaan -->
+                        <div class="mb-3">
+                            <label class="form-label">Pekerjaan</label>
+                            <input type="text" class="form-control" id="modal_pekerjaan">
+                        </div>
+
+                        <!-- Penghasilan -->
+                        <div class="mb-3">
+                            <label class="form-label">Penghasilan (Rp/bulan)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="text" class="form-control format-rupiah" id="modal_penghasilan"
+                                    inputmode="numeric" placeholder="0">
+                            </div>
+                        </div>
+
+                        <!-- No Telp -->
+                        <div class="mb-3">
+                            <label class="form-label">No Telp/WA</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-whatsapp"></i></span>
+                                <input type="text" class="form-control" id="modal_no_telp" inputmode="tel"
+                                    maxlength="15" placeholder="081234567890">
+                            </div>
+                        </div>
+
+                        <!-- Status ABI -->
+                        <div class="mb-3">
+                            <label class="form-label">Status Keanggotaan ABI</label>
+                            <select class="form-select" id="modal_status_abi">
+                                <option value="simpatisan">Simpatisan</option>
+                                <option value="anggota">Anggota</option>
+                                <option value="kader">Kader</option>
+                                <option value="lainnya">Lainnya</option>
+                            </select>
+                        </div>
+
+                        <!-- Skills -->
+                        <div class="mb-3">
+                            <label class="form-label">Skills / Keahlian</label>
+                            <textarea class="form-control" id="modal_skills" rows="3"
+                                placeholder="Deskripsikan kemampuan yang dimiliki"></textarea>
+                        </div>
+
+                        <!-- Kaderisasi -->
+                        <div class="mb-2">
+                            <label class="form-label d-block">Riwayat Kaderisasi</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="modal_kader_ptd" value="PTD">
+                                <label class="form-check-label" for="modal_kader_ptd">PTD</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="modal_kader_ptm" value="PTM">
+                                <label class="form-check-label" for="modal_kader_ptm">PTM</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnSimpanModal" style="flex: 2;">
+                        <span class="spinner-border spinner-border-sm d-none" id="modalLoading"></span>
+                        <i class="bi bi-check-circle me-1"></i>Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Relasi Antar-Person (Full-screen di mobile) -->
+    <div class="modal fade" id="relationModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #0dcaf0; color: white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-diagram-3 me-2"></i>Kelola Relasi
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Daftar Relasi Existing -->
+                    <div id="existingRelationsContainer" class="d-none mb-3">
+                        <h6
+                            style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px; color: #6c757d; margin-bottom: 10px;">
+                            <i class="bi bi-list-check me-1"></i>Relasi Tercatat
+                        </h6>
+                        <ul id="existingRelationsList" class="list-unstyled mb-0">
+                            <!-- Di-render oleh RelationListRenderer -->
+                        </ul>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <!-- Form Tambah Relasi Baru -->
+                    <h6
+                        style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px; color: #6c757d; margin-bottom: 12px;">
+                        <i class="bi bi-plus-circle me-1"></i>Tambah Relasi Baru
+                    </h6>
+
+                    <form id="relationForm" novalidate>
+                        <input type="hidden" id="source_person_id">
+                        <input type="hidden" id="target_person_id">
+
+                        <div class="mb-3">
+                            <label class="form-label required-field">NIK Target Relasi</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="relasi_target_nik" maxlength="16"
+                                    inputmode="numeric" placeholder="16 digit NIK target">
+                                <button type="button" class="btn btn-primary" id="btnCariTarget">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                            <div class="invalid-feedback"></div>
+                            <div class="form-text">Cari person dari KK manapun</div>
+                        </div>
+
+                        <div class="target-status-box">
+                            <div class="status-label">Target Terpilih</div>
+                            <div class="status-value" id="target_nama_display">-</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label required-field">Tipe Relasi</label>
+                            <select class="form-select" id="relasi_tipe" required>
+                                <option value="">-- Pilih Tipe Relasi --</option>
+                                <option value="anak">Anak</option>
+                                <option value="orang_tua">Orang Tua</option>
+                                <option value="saudara">Saudara Kandung</option>
+                                <option value="paman_bibi">Paman / Bibi</option>
+                                <option value="keponakan">Keponakan</option>
+                                <option value="mertua">Mertua</option>
+                                <option value="ipar">Ipar</option>
+                                <option value="sepupu">Sepupu / Misan</option>
+                                <option value="lainnya">Lainnya</option>
+                            </select>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-info text-white" id="btnSimpanRelasi" style="flex: 2;">
+                        <span class="spinner-border spinner-border-sm d-none" id="relasiLoading"></span>
+                        <i class="bi bi-check-circle me-1"></i>Simpan Relasi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div id="mobile-navbar-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Entry point controller (SAMA dengan versi desktop) -->
+    <script type="module" src="/src/controllers/PersonFormController.js"></script>
+
+    <!-- Mobile Navbar & Back Button -->
+    <script type="module">
+        import { renderMobileNavbar } from '/mobile/js/MobileNavbarComponent.js';
+        renderMobileNavbar();
+
+        document.getElementById('btnBack')?.addEventListener('click', () => {
+            window.location.href = '/mobile/search.html';
+        });
+    </script>
+</body>
+
+</html>

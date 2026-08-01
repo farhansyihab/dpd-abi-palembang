@@ -68,7 +68,13 @@ export class SearchResultRenderer {
 
             item.addEventListener('click', () => {
                 Logger.info(MODULE_NAME, `User mengklik hasil pencarian, redirect ke family ID: ${family.id}`);
-                window.location.href = `/family-form.html?id=${family.id}`;
+
+                // 🆕 DETEKSI OTOMATIS: Cek apakah sedang di folder mobile
+                const isMobile = window.location.pathname.startsWith('/mobile/');
+                const basePath = isMobile ? '/mobile' : '';
+
+                // Gunakan basePath yang dinamis
+                window.location.href = `${basePath}/family-form.html?id=${family.id}`;
             });
 
             listGroup.appendChild(item);

@@ -23,31 +23,43 @@ export class PersonListManager {
     renderTable(persons) {
         this.tableBody.innerHTML = '';
         if (persons.length === 0) {
-            this.tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Belum ada data anggota. Klik "Tambah Anggota".</td></tr>';
+            this.tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Belum ada data anggota. Tap tombol + untuk menambah.</td></tr>';
+            // Update counter badge di mobile
+            const counter = document.getElementById('personCount');
+            if (counter) counter.textContent = '0';
             return;
         }
+        // Update counter badge di mobile
+        const counter = document.getElementById('personCount');
+        if (counter) counter.textContent = persons.length.toString();
+
         persons.forEach(person => {
             const tr = document.createElement('tr');
-            // TAMBAHAN: Kolom aksi sekarang punya 3 tombol (Relasi, Edit, Hapus)
+            // Tambahkan class khusus untuk Kepala Keluarga (border kiri hijau di mobile)
+            if (person.hubungan_dlm_keluarga === 'kepala_keluarga') {
+                tr.classList.add('kepala-keluarga-row');
+            }
+
+            // 🆕 TAMBAHKAN data-label untuk mobile card view
             tr.innerHTML = `
-                <td>${person.nik}</td>
-                <td class="fw-bold">${person.nama}</td>
-                <td><span class="badge bg-secondary">${this.formatHubungan(person.hubungan_dlm_keluarga)}</span></td>
-                <td>${person.usia || '-'} thn</td>
-                <td>${person.pekerjaan || '-'}</td>
-                <td><span class="badge bg-info text-dark">${person.status_abi}</span></td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-info me-1 btn-relasi" data-id="${person.id}" title="Kelola Relasi">
-                        <i class="bi bi-diagram-3"></i>
-                    </button>
-                    <button class="btn btn-sm btn-warning me-1 btn-edit" data-id="${person.id}" title="Edit">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger btn-delete" data-id="${person.id}" title="Hapus">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            `;
+            <td data-label="NIK">${person.nik}</td>
+            <td data-label="Nama" class="fw-bold">${person.nama}</td>
+            <td data-label="Hubungan"><span class="badge bg-secondary">${this.formatHubungan(person.hubungan_dlm_keluarga)}</span></td>
+            <td data-label="Usia">${person.usia || '-'} thn</td>
+            <td data-label="Pekerjaan">${person.pekerjaan || '-'}</td>
+            <td data-label="Status ABI"><span class="badge bg-info text-dark">${person.status_abi}</span></td>
+            <td data-label="Aksi" class="text-center">
+                <button class="btn btn-sm btn-info me-1 btn-relasi" data-id="${person.id}" title="Kelola Relasi">
+                    <i class="bi bi-diagram-3"></i>
+                </button>
+                <button class="btn btn-sm btn-warning me-1 btn-edit" data-id="${person.id}" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-danger btn-delete" data-id="${person.id}" title="Hapus">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
             this.tableBody.appendChild(tr);
         });
 
