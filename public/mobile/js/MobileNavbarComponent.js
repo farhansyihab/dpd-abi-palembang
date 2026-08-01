@@ -10,7 +10,6 @@
  * - Posisi fixed di bawah (bottom nav) seperti aplikasi mobile native
  * - Auto-detect halaman aktif dari URL
  */
-import { AuthService } from '/src/services/AuthService.js';
 import { Logger } from '/src/core/Logger.js';
 
 const MODULE_NAME = 'MobileNavbarComponent';
