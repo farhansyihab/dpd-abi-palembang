@@ -306,6 +306,37 @@ export class FamilyService {
     }
 
     /**
+     * Update snapshot ekonomi yang SUDAH ADA (periode tidak berubah).
+     * Beda dengan saveEconomicAssessment: method ini tidak cek duplikasi periode,
+     * karena tujuannya justru mengoreksi entry yang sudah ada, bukan bikin entry baru.
+     *
+     * @param {string} assessmentId - ID dokumen economic_assessments yang akan diupdate
+     * @param {Object} assessmentData - Data assessment baru (sesuai EconomicAssessmentModel)
+     */
+    async updateEconomicAssessment(assessmentId, assessmentData) {
+        try {
+            Logger.info(MODULE_NAME, `Mengupdate snapshot ekonomi ${assessmentId}`);
+
+            const assessmentModel = new EconomicAssessmentModel(assessmentData);
+            const validationErrors = assessmentModel.validate();
+            // family_id & periode kosong di sini karena tidak disertakan saat update — abaikan pesan itu
+            const relevantErrors = validationErrors.filter(e => !e.includes('Family ID') && !e.includes('Periode'));
+            if (relevantErrors.length > 0) {
+                throw new AppError(
+                    `Validasi economic assessment gagal: ${relevantErrors.join(', ')}`,
+                    MODULE_NAME,
+                    'VALIDATION_FAILED'
+                );
+            }
+
+            await this.economicRepo.update(assessmentId, assessmentModel.toFirestore());
+            Logger.info(MODULE_NAME, `Snapshot ekonomi ${assessmentId} berhasil diupdate`);
+        } catch (error) {
+            throw this._handleError(error, 'updateEconomicAssessment');
+        }
+    }
+
+    /**
      * Helper: bungkus error jadi AppError dengan konteks lengkap
      */
     _handleError(error, methodName) {

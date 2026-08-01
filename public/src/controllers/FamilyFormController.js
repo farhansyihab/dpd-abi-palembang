@@ -34,6 +34,9 @@ class FamilyFormController extends BaseController {
         this.personService = new PersonService();
         this.isEditMode = false;
         this.currentFamilyId = null;
+        this.kepalaKeluargaPersonId = null;   // 🆕
+        this.currentAssessmentId = null;      // 🆕
+        this.currentAssessmentPeriode = null; // 🆕        
 
         // Compose helper classes
         this.validator = new FamilyFormValidator(this);
@@ -97,7 +100,40 @@ class FamilyFormController extends BaseController {
 
         try {
             if (this.isEditMode) {
+                // 1. Update Family
                 await this.familyService.updateFamily(this.currentFamilyId, formData.familyData, formData.namaKepalaKeluarga);
+
+                // 2. Update Kepala Keluarga (Person)
+                if (this.kepalaKeluargaPersonId) {
+                    await this.personService.updatePerson(this.kepalaKeluargaPersonId, {
+                        nik: formData.kepalaKeluargaData.nik,
+                        nama: formData.namaKepalaKeluarga,
+                        tempat_lahir: formData.kepalaKeluargaData.tempat_lahir,
+                        tanggal_lahir: formData.kepalaKeluargaData.tanggal_lahir,
+                        jenis_kelamin: formData.kepalaKeluargaData.jenis_kelamin,
+                        pendidikan_terakhir: formData.kepalaKeluargaData.pendidikan,
+                        pekerjaan: formData.kepalaKeluargaData.pekerjaan,
+                        penghasilan_bulan: formData.kepalaKeluargaData.penghasilan,
+                        status_abi: formData.kepalaKeluargaData.status_abi
+                    });
+                    Logger.info(MODULE_NAME, 'Data kepala keluarga (Person) berhasil diupdate');
+                } else {
+                    Logger.warn(MODULE_NAME, 'kepalaKeluargaPersonId tidak ada — perubahan data kepala keluarga TIDAK tersimpan');
+                    this.showAlert('Perhatian: data pribadi kepala keluarga tidak dapat diperbarui (relasi Person tidak ditemukan). Family & ekonomi tetap tersimpan.', 'warning', 8000);
+                }
+
+                // 3. Update atau buat baru snapshot ekonomi
+                if (formData.economicData && formData.economicData.periode) {
+                    const periodeSama = this.currentAssessmentId && formData.economicData.periode === this.currentAssessmentPeriode;
+                    if (periodeSama) {
+                        await this.familyService.updateEconomicAssessment(this.currentAssessmentId, formData.economicData);
+                        Logger.info(MODULE_NAME, 'Snapshot ekonomi (periode sama) berhasil diupdate');
+                    } else {
+                        await this.familyService.saveEconomicAssessment(this.currentFamilyId, formData.economicData);
+                        Logger.info(MODULE_NAME, 'Periode berubah — snapshot ekonomi baru dibuat (histori tetap terjaga)');
+                    }
+                }
+
                 this.showAlert('Data keluarga berhasil diperbarui', 'success');
             } else {
                 // Step 1: Buat keluarga

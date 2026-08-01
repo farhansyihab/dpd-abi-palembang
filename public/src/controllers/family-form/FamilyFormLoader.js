@@ -44,6 +44,7 @@ export class FamilyFormLoader {
                 const persons = await this.controller.personService.getPersonsByFamily(familyId);
                 const kepalaKeluarga = persons.find(p => p.hubungan_dlm_keluarga === 'kepala_keluarga');
                 if (kepalaKeluarga) {
+                    this.controller.kepalaKeluargaPersonId = kepalaKeluarga.id; // 🆕
                     this.controller.setFieldValue('nama_kepala_keluarga', kepalaKeluarga.nama);
                     this.controller.setFieldValue('nik_kepala_keluarga', kepalaKeluarga.nik);
                     this.controller.setFieldValue('tempat_lahir_kk', kepalaKeluarga.tempat_lahir);
@@ -58,6 +59,8 @@ export class FamilyFormLoader {
 
             // Populate Bagian C: Data Ekonomi
             if (latestAssessment) {
+                this.controller.currentAssessmentId = latestAssessment.id;           // 🆕
+                this.controller.currentAssessmentPeriode = latestAssessment.periode; // 🆕                
                 this.controller.setFieldValue('eco_periode', latestAssessment.periode);
                 this.controller.setFieldValue('eco_sumber_pendapatan', latestAssessment.sumber_pendapatan_utama);
                 this.controller.setFieldValue('eco_total_pendapatan', FamilyFormFormatter.formatRupiah(latestAssessment.total_pendapatan));
