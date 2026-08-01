@@ -50,7 +50,7 @@ class AdminBackupController extends BaseController {
             if (user.email !== ALLOWED_EMAIL) {
                 Logger.warn(MODULE_NAME, `Akses ditolak untuk email: ${user.email}. Redirect.`);
                 // Redirect diam-diam, seolah halaman tidak ada
-                // window.location.href = '/';
+                window.location.href = '/';
                 return false;
             }
 

@@ -18,7 +18,7 @@ import { Logger } from '../core/Logger.js';
 import { AppError } from '../core/AppError.js';
 
 const MODULE_NAME = 'AdminBackupService';
-const ADMIN_EMAIL = 'agiaptek@gmail.com'; // Hardcoded sesuai permintaan
+const ADMIN_EMAIL = 'agiptek@gmail.com'; // Hardcoded sesuai permintaan
 
 export class AdminBackupService {
     constructor() {
