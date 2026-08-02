@@ -68,13 +68,16 @@ export class SearchResultRenderer {
 
             item.addEventListener('click', () => {
                 Logger.info(MODULE_NAME, `User mengklik hasil pencarian, redirect ke family ID: ${family.id}`);
-
                 // 🆕 DETEKSI OTOMATIS: Cek apakah sedang di folder mobile
                 const isMobile = window.location.pathname.startsWith('/mobile/');
-                const basePath = isMobile ? '/mobile' : '';
 
-                // Gunakan basePath yang dinamis
-                window.location.href = `${basePath}/family-form.html?id=${family.id}`;
+                if (isMobile) {
+                    // Di mobile → buka family-detail.html (read-only viewer)
+                    window.location.href = `/mobile/family-detail.html?id=${family.id}`;
+                } else {
+                    // Di desktop → buka family-form.html (form edit)
+                    window.location.href = `/family-form.html?id=${family.id}`;
+                }
             });
 
             listGroup.appendChild(item);
